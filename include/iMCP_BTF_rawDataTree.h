@@ -44,18 +44,22 @@
 
 
 //MCP connections (4 are readout in parallel via CFD+TDC & Digitizer, 1 only digitizer)
+//This is MiB1
 #define MCP_0_TDC_CHANNEL 0
 #define MCP_0_DIGITIZER_CHANNEL 0
 
+//This was MiB2 and sometime a RM MCP when both RM were present
 #define MCP_1_TDC_CHANNEL 1
 #define MCP_1_DIGITIZER_CHANNEL 1
 
-
+//This is PLANACON... no TDC
 #define MCP_2_DIGITIZER_CHANNEL 3
 
+//This was MiB3
 #define MCP_3_TDC_CHANNEL 2
 #define MCP_3_DIGITIZER_CHANNEL 4
 
+//This was RM (most of the time RM #2)
 #define MCP_4_TDC_CHANNEL 3
 #define MCP_4_DIGITIZER_CHANNEL 5
 

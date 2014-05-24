@@ -2,6 +2,7 @@
 #define WaveForm_h
 
 #include <vector> 
+#include <algorithm> 
 
 class Waveform
 {
@@ -19,18 +20,35 @@ class Waveform
     float pedestal;
     float rms;
   };
-  
-  explicit Waveform(int nSamples, float* samples)
+
+  Waveform()
     {
-      _samples.reserve(nSamples);
+    };
+
+  //constructor from float array
+  Waveform(int nSamples, float* samples)
+    {
+      _samples.resize(nSamples);
       for (unsigned int i(0);i<nSamples;++i)
 	_samples[i]=samples[i];
+    };
+
+  //constructor from std::vector<float>
+  Waveform(const std::vector<float>& samples)
+    {
+      _samples.resize(samples.size());
+      std::copy(samples.begin(), samples.end(), _samples.begin());
     };
 
   ~Waveform()
     {
     };
-  
+
+  //add samples
+  void addSample(const float& sample)
+  {
+    _samples.push_back(sample);
+  }
   //Get the max amplitude between x1 and x2 using nSamplesAroundMax samples and a parabolic fit
   max_amplitude_informations max_amplitude(const int& x1, const int& x2, int nSamplesAroundMax=5) const;
 
