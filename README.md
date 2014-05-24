@@ -9,5 +9,6 @@
 Instructions:
 
 make clean && make all
+
 scripts/runSimpleRecoTreeProducer.py -i <input rawDataTree> -o <outDir> -L <libDir with libBTFTBSW.so usually lib/>
 
