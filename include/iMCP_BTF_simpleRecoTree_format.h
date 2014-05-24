@@ -1,3 +1,6 @@
+#ifndef iMCP_BTF_simpleRecoTree_format_h
+#define iMCP_BTF_simpleRecoTree_format_h
+
 #define MAX_HODO_CLUSTER  8
 
 #define MAX_TDC_MEASUREMENTS  10
@@ -9,6 +12,7 @@
 
 #define MCP_TDC_CHANNELS 4
 #define MCP_DIGI_CHANNELS 5
+
 
 struct tdc_data
 {
@@ -38,13 +42,28 @@ struct hodoscope_data
   hodoscope_plane_data hodoYClusters;
 };
 
-struct iMCP_BTF_simpleRecoTree_format
+struct scint_data
 {
   float scint_adc_data[SCINT_ADC_CHANNELS]; //scint front and back adc count (pedestal substracted)
   waveform_data scint_digi_data[SCINT_DIGI_CHANNELS]; //scint waveforms
+};
 
-  hodoscope_data hodoClusters;
-
+struct mcp_data
+{
   tdc_data mcp_tdc_data[MCP_TDC_CHANNELS]; 
   waveform_data mcp_digi_data[MCP_DIGI_CHANNELS]; //mcp waveforms
 };
+
+struct iMCP_BTF_simpleRecoTree_format
+{
+  //Scintillator front[0] & back[1] data
+  scint_data _scintData;
+
+  //hodoscope reconstructed positions in X&Y planes
+  hodoscope_data _hodoData;
+
+  //MCP data
+  mcp_data _mcpData;
+};
+
+#endif
