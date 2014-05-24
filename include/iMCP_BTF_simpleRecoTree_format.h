@@ -13,6 +13,7 @@
 #define MCP_TDC_CHANNELS 4
 #define MCP_DIGI_CHANNELS 5
 
+#include <TROOT.h>
 
 struct tdc_data
 {
@@ -65,6 +66,8 @@ struct iMCP_BTF_simpleRecoTree_format
 
   //MCP data
   mcp_data _mcpData;
+
+  ClassDef(iMCP_BTF_simpleRecoTree_format,1);
 };
 
 #endif

@@ -70,11 +70,12 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	//This is MiB1
 	if ( digiChannel[i]==MCP_0_DIGITIZER_CHANNEL )
 	  mcp_waveforms[0].addSample(digiSampleValue[i]);
-	/*	
+
 	//This is MiB2
 	if (digiChannel[i]==MCP_1_DIGITIZER_CHANNEL )
 	  mcp_waveforms[1].addSample(digiSampleValue[i]);
-	    
+
+
 	//This is PLANACON
 	if (digiChannel[i]==MCP_2_DIGITIZER_CHANNEL )
 	  mcp_waveforms[4].addSample(digiSampleValue[i]);
@@ -86,13 +87,14 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	//This is RM
 	if (digiChannel[i]==MCP_4_DIGITIZER_CHANNEL )
 	  mcp_waveforms[3].addSample(digiSampleValue[i]);
-	
+
+
 	if (digiChannel[i] == SCINT_FRONT_DIGITIZER_CHANNEL )
 	  scint_waveforms[0].addSample(digiSampleValue[i]);
-	
+
 	if (digiChannel[i] == SCINT_BACK_DIGITIZER_CHANNEL)
 	  scint_waveforms[1].addSample(digiSampleValue[i]);
-	*/
+
       } //end loop over digis
   } //end loop over entries
 
