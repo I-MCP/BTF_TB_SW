@@ -8,6 +8,10 @@ iMCP_BTF_simpleRecoTree::~iMCP_BTF_simpleRecoTree()
 {
 }
 
+void iMCP_BTF_simpleRecoTree::bookOutputTree()
+{
+}
+
 void iMCP_BTF_simpleRecoTree::Loop()
 {
 }
