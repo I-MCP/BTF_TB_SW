@@ -22,7 +22,7 @@ parser.add_option("-o","--outputDir")
 
 import ROOT as r
 r.gROOT.SetBatch(1)
-r.gSystem.Load(options.libDir+"/libBTFTBFW.so")
+r.gSystem.Load(options.libDir+"/libBTFTBSW.so")
 
 file = r.TFile.Open(options.inputFile)
 if (not file.IsOpen()):
@@ -32,7 +32,7 @@ tree = file.Get("eventRawData")
 
 os.system('mkdir -p %s'%options.outputDir)
 
-a=r.iMCP_BTF_simpleRecoTre(tree)
-a.outFile=options.outputDir+"/"+os.path.splitext(path_leaf(options.inputFile))[0]+"_dqmPlots.root"
+a=r.iMCP_BTF_simpleRecoTree(tree)
+a.outFile=options.outputDir+"/"+os.path.splitext(path_leaf(options.inputFile))[0]+"_RECO.root"
 a.Loop()
 
