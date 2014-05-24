@@ -23,7 +23,7 @@ struct tdc_data
 struct waveform_data
 {
   float pedestal; //from pre-samples;
-  float max_amplitued; //max_value;
+  float max_amplitude; //max_value;
   float time_at_frac; //emualated constant fraction data
   float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
 };
