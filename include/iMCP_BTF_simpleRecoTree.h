@@ -25,6 +25,7 @@ class iMCP_BTF_simpleRecoTree : public iMCP_BTF_rawDataTree
   virtual void  Loop();
 
   void bookOutputTree();
+  ClassDef(iMCP_BTF_simpleRecoTree,1);
 };
 
 #endif

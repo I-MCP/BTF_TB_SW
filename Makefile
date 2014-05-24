@@ -16,8 +16,8 @@ WORKDIR    = bin
 LIBDIR     = lib
 PACKAGE = BTFTBSW
 
-#CINTFILE  = $(PACKAGE)Cint.cc
-#CINTOBJ   = $(PACKAGE)Cint.o
+CINTFILE  = src/$(PACKAGE)Cint.cc
+CINTOBJ   = $(PACKAGE)Cint.o
 
 LIBFILE	 =  $(LIBDIR)/lib$(PACKAGE).a
 SHLIBFILE = $(LIBDIR)/lib$(PACKAGE).so
@@ -29,7 +29,7 @@ ROOTSYS  ?= ERROR_RootSysIsNotDefined
 
 EXTRALIBS  := -L$(LIBDIR) -l$(PACKAGE)
 
-HHLIST=$(filter-out $(PACKAGE)_LinkDef.h,$(wildcard *.h))
+HHLIST=$(filter-out include/$(PACKAGE)_LinkDef.h,$(wildcard include/*.h))
 
 # CC files excluding the binaries
 CCFILES=$(filter-out $(BINFILES),$(wildcard src/*.cc))
@@ -44,14 +44,14 @@ $(OBJDIR)/%.o : src/%.cc
 	$(CC) $(CCFLAGS) -c $< -o $@ $(INCLUDES)
 
 
-#$(OBJDIR)/$(CINTOBJ): $(HHLLIST) 
-#	@mkdir -p $(OBJDIR)
+$(OBJDIR)/$(CINTOBJ): $(HHLLIST) 
+	@mkdir -p $(OBJDIR)
 #	@cp *.hh $(INCDIR)
-#	@echo "Running rootcint"
-#	$(ROOTSYS)/bin/rootcint -f $(CINTFILE) -c $(INCLUDES) $(HHLIST) $(PACKAGE)_LinkDef.h
-#	@echo "Compiling $(CINTFILE)"
-#	@$(CC) $(INCLUDES) $(CCFLAGS) -c $(CINTFILE) -o $(OBJDIR)/$(CINTOBJ) 
-#
+	@echo "Running rootcint"
+	$(ROOTSYS)/bin/rootcint -f $(CINTFILE) -c $(INCLUDES) $(HHLIST) include/$(PACKAGE)_LinkDef.h
+	@echo "Compiling $(CINTFILE)"
+	$(CC) $(INCLUDES) $(CCFLAGS) -c $(CINTFILE) -o $(OBJDIR)/$(CINTOBJ) 
+
 
 $(PROGRAMS) : $(SHLIBFILE) 
 	mkdir -p $(WORKDIR)
@@ -59,27 +59,26 @@ $(PROGRAMS) : $(SHLIBFILE)
 	$(CC) $(CCFLAGS) $(INCLUDES) $(ROOTLIBS) $(EXTRALIBS) -o $(WORKDIR)/$@ $(patsubst %,src/%.cpp,$@)
 #	$(CC) $(CCFLAGS) $(INCLUDES) -o $(WORKDIR)/$@ $(patsubst %,%.cpp,$@) $(ROOTLIBS) $(EXTRALIBS) 
 
-default : $(PROGRAMS) 
-	@echo "Programs are $(PROGRAMS)"
+default : $(OLIST) $(SHLIBFILE) $(PROGRAMS) 
+#	@echo "Programs are $(PROGRAMS)"
 
-all : $(PROGRAMS) 
+all : $(OLIST) $(SHLIBFILE) $(PROGRAMS) 
 
 # Rule to combine objects into a library
-$(LIBFILE): $(OLIST) 
+$(LIBFILE): $(patsubst $(OBJDIR)/src/%.cc,$(OBJDIR)/%.o,$(OBJDIR)/$(CINTFILE))
 #$(patsubst %.cc,%.o,$(OBJDIR)/$(CINTFILE))
 	@echo "Making $(LIBFILE)"
 	@rm -f $(LIBFILE) 
-#	@ar q $(LIBFILE) $(OLIST) $(addprefix $(OBJDIR)/,$(OLIST) $(patsubst %.cc,%.o,$(CINTFILE)))
-	@ar q $(LIBFILE) $(OLIST) $(addprefix $(OBJDIR)/,$(OLIST))
+	@ar q $(LIBFILE) $(OLIST) $(addprefix $(OBJDIR)/,$(OLIST) $(patsubst src/%.cc,%.o,$(CINTFILE)))
+#	@ar q $(LIBFILE) $(OLIST) $(addprefix $(OBJDIR)/,$(OLIST))
 	@ranlib $(LIBFILE)
 
 # Rule to combine objects into a shared library
-$(SHLIBFILE): $(OLIST) 
-#$(patsubst %.cc,%.o,$(OBJDIR)/$(CINTFILE))
+$(SHLIBFILE): $(OLIST) $(patsubst $(OBJDIR)/src/%.cc,$(OBJDIR)/%.o,$(OBJDIR)/$(CINTFILE))
 	@echo "Making $(SHLIBFILE)"
 	@rm -f $(SHLIBFILE)
 #	$(CC) $(CCFLAGS) $(OLIST) $(addprefix $(OBJDIR)/,$(patsubst %.cc,%.o,$(CINTFILE))) -shared -o $(SHLIBFILE) 
-	$(CC) $(CCFLAGS) $(OLIST) -shared -o $(SHLIBFILE) 
+	$(CC) $(CCFLAGS) $(ROOTLIBS) $(OLIST) $(addprefix $(OBJDIR)/,$(patsubst src/%.cc,%.o,$(CINTFILE))) -shared -o $(SHLIBFILE) 
 
 # Useful build targets
 lib: $(LIBFILE)
@@ -87,8 +86,8 @@ lib: $(LIBFILE)
 shlib:	$(SHLIBFILE)
 
 clean:
-#	@rm -Rf $(WORKDIR)/* $(LIBDIR)/* $(CINTFILE) $(patsubst %.cc,%.h,$(CINTFILE))	
-	@rm -Rf $(WORKDIR)/* $(LIBDIR)/* 
+	@rm -Rf $(WORKDIR)/* $(LIBDIR)/* $(CINTFILE) $(patsubst %.cc,%.h,$(CINTFILE))	
+#	@rm -Rf $(WORKDIR)/* $(LIBDIR)/* 
 	@rm -f $(LIBFILE)
 	@rm -Rf *.o
 

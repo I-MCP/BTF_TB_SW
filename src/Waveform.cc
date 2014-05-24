@@ -1,5 +1,7 @@
 #include "Waveform.h"
 
+ClassImp(Waveform);
+
 Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, const int& x2, int nSamplesAroundMax) const
 {
 };

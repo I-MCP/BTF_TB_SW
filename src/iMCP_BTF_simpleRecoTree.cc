@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+ClassImp(iMCP_BTF_simpleRecoTree);
+
 iMCP_BTF_simpleRecoTree::iMCP_BTF_simpleRecoTree(TTree *tree) : iMCP_BTF_rawDataTree(tree)
 {
 } 
@@ -45,13 +47,15 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	startTimeStamp=evtTime;
 	std::cout << "First event taken @ timestamp (days from 01/04/2014) " <<  ((float)startTimeStamp/1000.)/86400. << std::endl;
       }
-    
+
+
+
     //Loop over digiSamples 
     for (unsigned int i=0;i<nDigiSamples;++i)
       {
 	//Checking that everything makes sense 
-	if (digiSampleValue[i]<-3 || digiSampleValue[i]>4200)
-	  std::cout << "WARNING DIGI sample value outside ADC 12bit range!" << std::endl;
+	if (digiSampleValue[i]<-50 || digiSampleValue[i]>4200)
+	  std::cout << "WARNING DIGI sample value outside ADC 12bit range! " << digiSampleValue[i] << std::endl;
 	
 	if (digiSampleIndex[i]>1023)
 	  std::cout << "WARNING DIGI sample index outside digitizer buffer range" << std::endl;
@@ -61,11 +65,12 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	
 	if (digiChannel[i]>8 )
 	  std::cout << "WARNING DIGI channel is unknown!" << std::endl;
-	
+
+
 	//This is MiB1
 	if ( digiChannel[i]==MCP_0_DIGITIZER_CHANNEL )
 	  mcp_waveforms[0].addSample(digiSampleValue[i]);
-	
+	/*	
 	//This is MiB2
 	if (digiChannel[i]==MCP_1_DIGITIZER_CHANNEL )
 	  mcp_waveforms[1].addSample(digiSampleValue[i]);
@@ -87,9 +92,8 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	
 	if (digiChannel[i] == SCINT_BACK_DIGITIZER_CHANNEL)
 	  scint_waveforms[1].addSample(digiSampleValue[i]);
-
+	*/
       } //end loop over digis
-
   } //end loop over entries
 
 } //end of function

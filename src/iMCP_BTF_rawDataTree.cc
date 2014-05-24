@@ -1,5 +1,7 @@
 #include "iMCP_BTF_rawDataTree.h"
 
+ClassImp(iMCP_BTF_rawDataTree);
+
 iMCP_BTF_rawDataTree::iMCP_BTF_rawDataTree(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file

@@ -1,6 +1,8 @@
 #ifndef WaveForm_h
 #define WaveForm_h
 
+#include "TROOT.h"
+ 
 #include <vector> 
 #include <algorithm> 
 
@@ -72,6 +74,7 @@ class Waveform
       _samples[i]*=rescale_factor;
   };
 
+  ClassDef(Waveform,1);
 
 };
 
