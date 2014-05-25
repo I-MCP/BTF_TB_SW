@@ -18,6 +18,7 @@ void iMCP_BTF_simpleRecoTree::bookOutputTree()
   bookScintData();
   bookMcpData();
   bookHodoData();
+  tree->Print();
 }
 
 void iMCP_BTF_simpleRecoTree::bookScintData()
@@ -71,10 +72,27 @@ void iMCP_BTF_simpleRecoTree::bookHodoscopePlane(TString name, hodoscope_plane_d
   tree->Branch(name+"_clusterEnergy",plane_data.hodoPlaneClusterRawAdcCount,name+"_clusterEnergy["+name+"_nClusters]/F");
 }
 
+void iMCP_BTF_simpleRecoTree::cannotOpenFile(const char * file)
+{
+  std::cerr << "File " << file << " cannot be opened" << std::endl;
+  exit(-1);
+}
+
 void iMCP_BTF_simpleRecoTree::Loop()
 {
   if (fChain == 0) return;
-  
+ 
+  TFile *out = TFile::Open(outFile,"RECREATE");  
+  if (!out->IsOpen())
+    cannotOpenFile(outFile.Data());
+
+  std::cout << "===> output file " << outFile << " opened" << std::endl;
+  tree=new TTree("eventData","Simple Reconstructed Event Data");
+  std::cout << "===> output tree " << tree->GetName() << " created" << std::endl;
+  std::cout << "===> booking output tree" << std::endl;
+  bookOutputTree();
+  std::cout << "===> tree is booked" << std::endl;
+
   Long64_t nentries = fChain->GetEntriesFast();
 
   if (maxEntries!=-1)
@@ -152,10 +170,10 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	  scint_waveforms[1].addSample(digiSampleValue[i]);
 
       } //end loop over digis
-    
+
+    //Simple shape analysis    
     Waveform::baseline_informations mcp_pedestals[MCP_DIGI_CHANNELS];
     Waveform::max_amplitude_informations mcp_max[MCP_DIGI_CHANNELS];
-    //Simple shape analysis
     for (unsigned int i(0);i<MCP_DIGI_CHANNELS;++i)
       {
 	mcp_pedestals[i]=mcp_waveforms[i].baseline(5,44); //use 40 samples between 5-44 to get pedestal and RMS
@@ -163,19 +181,46 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	if (i!=4)
 	  mcp_waveforms[i].rescale(-1); //invert Buderk MCPs signal
 	mcp_max[i]=mcp_waveforms[i].max_amplitude(150,350); //find max amplitude between 50 and 500 samples
+
+	//Fill tree Data
+	treeData._mcpData.mcp_digi_data[i].pedestal=mcp_pedestals[i].pedestal;
+	treeData._mcpData.mcp_digi_data[i].pedestal_rms=mcp_pedestals[i].rms;
+	treeData._mcpData.mcp_digi_data[i].max_amplitude=mcp_max[i].max_amplitude;
+	treeData._mcpData.mcp_digi_data[i].time_at_frac=-1; //not yet filled
+
+	//Filling interesting samples
+	for (unsigned int isample(0);isample<DIGI_SAMPLES_TO_STORE;++isample)
+	  treeData._mcpData.mcp_digi_data[i].samples[isample]=mcp_waveforms[i]._samples[150+isample];
       }
 
     Waveform::baseline_informations scint_pedestals[SCINT_DIGI_CHANNELS];
     Waveform::max_amplitude_informations scint_max[SCINT_DIGI_CHANNELS];
-    //Simple shape analysis
-    for (unsigned int i(0);i<SCINT_DIGI_CHANNELS;++i)
+     for (unsigned int i(0);i<SCINT_DIGI_CHANNELS;++i)
       {
 	scint_pedestals[i]=scint_waveforms[i].baseline(5,44); //use 40 samples between 5-44 to get pedestal and RMS
 	scint_waveforms[i].offset(scint_pedestals[i].pedestal);
-	scint_waveforms[i].rescale(-1); //invert Buderk MCPs signal
-	scint_max[i]=scint_waveforms[i].max_amplitude(650,900); //find max amplitude between 50 and 500 samples
+	scint_waveforms[i].rescale(-1); //invert 
+	scint_max[i]=scint_waveforms[i].max_amplitude(650,850); //find max amplitude 
+	//Fill tree Data
+	treeData._scintData.scint_digi_data[i].pedestal=scint_pedestals[i].pedestal;
+	treeData._scintData.scint_digi_data[i].pedestal_rms=scint_pedestals[i].rms;
+	treeData._scintData.scint_digi_data[i].max_amplitude=scint_max[i].max_amplitude;
+	treeData._scintData.scint_digi_data[i].time_at_frac=-1; //not yet filled
+
+	//Filling interesting samples
+	for (unsigned int isample(0);isample<DIGI_SAMPLES_TO_STORE;++isample)
+	  {
+	    if (i==0)
+	      treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[620+isample];
+	    else if (i==1)
+	      treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[710+isample];
+	  }
       }
+     tree->Fill();
   } //end loop over entries
-  
+
+  tree->Write();
+  out->Close();
+  std::cout << "===> " << outFile << " closed" << std::endl;
 } //end of function
 

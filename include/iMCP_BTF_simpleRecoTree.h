@@ -36,6 +36,8 @@ class iMCP_BTF_simpleRecoTree : public iMCP_BTF_rawDataTree
   void bookTdcData(TString name, tdc_data& tdc);
   void bookHodoscopePlane(TString name, hodoscope_plane_data& plane_data);
 
+  void cannotOpenFile(const char * file);
+
   ClassDef(iMCP_BTF_simpleRecoTree,1);
 };
 
