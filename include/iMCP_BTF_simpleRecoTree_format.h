@@ -15,6 +15,14 @@
 
 #include <TROOT.h>
 
+struct eventInfo
+{
+  unsigned int evtNumber;
+  unsigned int evtTimestamp;
+  unsigned int evtTimedist;
+  unsigned int evtTimeSinceStart;
+};
+
 struct tdc_data
 {
   int tdc_nCounts;
@@ -37,6 +45,7 @@ struct waveform_data
   float time_at_max; //emualated constant fraction data
   float time_at_frac; //emualated constant fraction data
   float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+  int sampleIndex[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
 
   void clear()
   {
@@ -46,7 +55,10 @@ struct waveform_data
     time_at_max=-1;
     time_at_frac=-1;
     for (unsigned int i(0);i<DIGI_SAMPLES_TO_STORE;++i)
-      samples[i]=-999;
+      {
+	samples[i]=-999;
+	sampleIndex[i]=-1;
+      }
   };
 };
 
@@ -109,6 +121,8 @@ struct mcp_data
 
 struct iMCP_BTF_simpleRecoTree_format
 {
+  eventInfo _evtInfo;
+
   //Scintillator front[0] & back[1] data
   scint_data _scintData;
 

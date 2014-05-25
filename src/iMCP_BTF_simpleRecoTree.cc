@@ -15,10 +15,19 @@ iMCP_BTF_simpleRecoTree::~iMCP_BTF_simpleRecoTree()
 
 void iMCP_BTF_simpleRecoTree::bookOutputTree()
 {
+  bookEventInfo();
   bookScintData();
   bookMcpData();
   bookHodoData();
   tree->Print();
+}
+
+void iMCP_BTF_simpleRecoTree::bookEventInfo()
+{
+  tree->Branch("evtNumber",&(treeData._evtInfo.evtNumber),"evtNumber/i");
+  tree->Branch("evtTimestamp",&(treeData._evtInfo.evtTimestamp),"evtTimestamp/i");
+  tree->Branch("evtTimedist",&(treeData._evtInfo.evtTimedist),"evtTimedist/i");
+  tree->Branch("evtTimeSinceStart",&(treeData._evtInfo.evtTimeSinceStart),"evtTimeSinceStart/i");
 }
 
 void iMCP_BTF_simpleRecoTree::bookScintData()
@@ -58,6 +67,7 @@ void iMCP_BTF_simpleRecoTree::bookWaveform(TString name, waveform_data& waveform
   tree->Branch(name+"_time_at_frac",&waveform.time_at_frac,name+"_time_at_frac/F");
   tree->Branch(name+"_time_at_max",&waveform.time_at_max,name+"_time_at_max/F");
   tree->Branch(name+"_samples",waveform.samples,name+Form("_samples[%d]/F",DIGI_SAMPLES_TO_STORE));
+  tree->Branch(name+"_sampleIndex",waveform.sampleIndex,name+Form("_sampleIndex[%d]/I",DIGI_SAMPLES_TO_STORE));
 }
 
 void iMCP_BTF_simpleRecoTree::bookTdcData(TString name, tdc_data& tdc)
@@ -105,6 +115,7 @@ void iMCP_BTF_simpleRecoTree::Loop()
   
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
 
+    //clear output tree data
     treeData.clear();
 
     Waveform mcp_waveforms[MCP_DIGI_CHANNELS];
@@ -125,6 +136,12 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	startTimeStamp=evtTime;
 	std::cout << "First event taken @ timestamp (days from 01/04/2014) " <<  ((float)startTimeStamp/1000.)/86400. << std::endl;
       }
+
+    //Filling evtInfo
+    treeData._evtInfo.evtNumber=evtNumber;
+    treeData._evtInfo.evtTimestamp=evtTime;
+    treeData._evtInfo.evtTimedist=evtTimeDist;
+    treeData._evtInfo.evtTimeSinceStart=evtTimeStart;
 
     //Loop over digiSamples 
     for (unsigned int i=0;i<nDigiSamples;++i)
@@ -192,7 +209,10 @@ void iMCP_BTF_simpleRecoTree::Loop()
 
 	//Filling interesting samples
 	for (unsigned int isample(0);isample<DIGI_SAMPLES_TO_STORE;++isample)
-	  treeData._mcpData.mcp_digi_data[i].samples[isample]=mcp_waveforms[i]._samples[150+isample];
+	  {
+	    treeData._mcpData.mcp_digi_data[i].samples[isample]=mcp_waveforms[i]._samples[150+isample];
+	    treeData._mcpData.mcp_digi_data[i].sampleIndex[isample]=150+isample;
+	  }
       }
 
     Waveform::baseline_informations scint_pedestals[SCINT_DIGI_CHANNELS];
@@ -214,9 +234,15 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	for (unsigned int isample(0);isample<DIGI_SAMPLES_TO_STORE;++isample)
 	  {
 	    if (i==0)
-	      treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[620+isample];
+	      {
+		treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[620+isample];
+		treeData._scintData.scint_digi_data[i].sampleIndex[isample]=620+isample;
+	      }
 	    else if (i==1)
-	      treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[710+isample];
+	      {
+		treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[710+isample];
+		treeData._scintData.scint_digi_data[i].sampleIndex[isample]=710+isample;
+	      }
 	  }
       }
      tree->Fill();
