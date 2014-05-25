@@ -4,6 +4,8 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+#include <TString.h>
+
 #include <string>
 
 #include "iMCP_BTF_rawDataTree.h"
@@ -14,7 +16,7 @@ class iMCP_BTF_simpleRecoTree : public iMCP_BTF_rawDataTree
 {
  public :
   TString outFile;
-  TTree* outTree;
+  TTree* tree;
   int maxEntries=-1;
 
   iMCP_BTF_simpleRecoTree_format treeData;
@@ -25,7 +27,15 @@ class iMCP_BTF_simpleRecoTree : public iMCP_BTF_rawDataTree
   //main analysis class
   virtual void  Loop();
 
+  //book tree branches
   void bookOutputTree();
+  void bookScintData();
+  void bookMcpData();
+  void bookHodoData();
+  void bookWaveform(TString name, waveform_data& waveform);
+  void bookTdcData(TString name, tdc_data& tdc);
+  void bookHodoscopePlane(TString name, hodoscope_plane_data& plane_data);
+
   ClassDef(iMCP_BTF_simpleRecoTree,1);
 };
 

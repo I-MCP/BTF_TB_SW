@@ -15,6 +15,60 @@ iMCP_BTF_simpleRecoTree::~iMCP_BTF_simpleRecoTree()
 
 void iMCP_BTF_simpleRecoTree::bookOutputTree()
 {
+  bookScintData();
+  bookMcpData();
+  bookHodoData();
+}
+
+void iMCP_BTF_simpleRecoTree::bookScintData()
+{
+  tree->Branch("scintFront_adc_data",&(treeData._scintData.scint_adc_data[0]),"scintFront_adc_data/F");
+  tree->Branch("scintBack_adc_data",&(treeData._scintData.scint_adc_data[1]),"scintBack_adc_data/F");
+  bookWaveform(TString("scintFront"),treeData._scintData.scint_digi_data[0]);
+  bookWaveform(TString("scintBack"),treeData._scintData.scint_digi_data[1]);
+}
+
+void iMCP_BTF_simpleRecoTree::bookMcpData()
+{
+  for (unsigned int i(0);i<MCP_TDC_CHANNELS;++i)
+    {
+      TString mcpName=Form("mcp_%d",i);
+      bookTdcData(mcpName,treeData._mcpData.mcp_tdc_data[i]);
+    }
+
+  for (unsigned int i(0);i<MCP_DIGI_CHANNELS;++i)
+    {
+      TString mcpName=Form("mcp_%d",i);
+      bookWaveform(mcpName,treeData._mcpData.mcp_digi_data[i]);
+    }
+}
+
+void iMCP_BTF_simpleRecoTree::bookHodoData()
+{
+  bookHodoscopePlane(TString("hodoX"),treeData._hodoData.hodoXClusters);
+  bookHodoscopePlane(TString("hodoY"),treeData._hodoData.hodoYClusters);
+}
+
+void iMCP_BTF_simpleRecoTree::bookWaveform(TString name, waveform_data& waveform)
+{
+  tree->Branch(name+"_pedestal",&waveform.pedestal,name+"_pedestal/F");
+  tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
+  tree->Branch(name+"_max_amplitude",&waveform.max_amplitude,name+"_max_amplitude/F");
+  tree->Branch(name+"_time_at_frac",&waveform.time_at_frac,name+"_time_at_frac/F");
+  tree->Branch(name+"_samples",waveform.samples,name+Form("_samples[%d]/F",DIGI_SAMPLES_TO_STORE));
+}
+
+void iMCP_BTF_simpleRecoTree::bookTdcData(TString name, tdc_data& tdc)
+{
+  tree->Branch(name+"_nTdcHits",&tdc.tdc_nCounts,name+"_nTdcHits/i");
+  tree->Branch(name+"_tdcMeasurement",&tdc.tdc_measurements,name+"_tdcMeasurement["+name+"_nTdcHits]/F");
+}
+
+void iMCP_BTF_simpleRecoTree::bookHodoscopePlane(TString name, hodoscope_plane_data& plane_data)
+{
+  tree->Branch(name+"_nClusters",&plane_data.nHodoPlaneClusters,name+"_nClusters/i");
+  tree->Branch(name+"_clusterPosition",plane_data.hodoPlaneClusterPosition,name+"_clusterPosition["+name+"_nClusters]/F");
+  tree->Branch(name+"_clusterEnergy",plane_data.hodoPlaneClusterRawAdcCount,name+"_clusterEnergy["+name+"_nClusters]/F");
 }
 
 void iMCP_BTF_simpleRecoTree::Loop()
@@ -31,6 +85,8 @@ void iMCP_BTF_simpleRecoTree::Loop()
   unsigned int startTimeStamp=0;
   
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+
+    treeData.clear();
 
     Waveform mcp_waveforms[MCP_DIGI_CHANNELS];
     Waveform scint_waveforms[SCINT_DIGI_CHANNELS];
