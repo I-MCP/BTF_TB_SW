@@ -22,7 +22,10 @@ void iMCP_BTF_simpleRecoTree::Loop()
   if (fChain == 0) return;
   
   Long64_t nentries = fChain->GetEntriesFast();
-  
+
+  if (maxEntries!=-1)
+    nentries=maxEntries;
+
   Long64_t nbytes = 0, nb = 0;
   
   unsigned int startTimeStamp=0;
@@ -48,8 +51,6 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	std::cout << "First event taken @ timestamp (days from 01/04/2014) " <<  ((float)startTimeStamp/1000.)/86400. << std::endl;
       }
 
-
-
     //Loop over digiSamples 
     for (unsigned int i=0;i<nDigiSamples;++i)
       {
@@ -65,7 +66,6 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	
 	if (digiChannel[i]>8 )
 	  std::cout << "WARNING DIGI channel is unknown!" << std::endl;
-
 
 	//This is MiB1
 	if ( digiChannel[i]==MCP_0_DIGITIZER_CHANNEL )
@@ -96,7 +96,30 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	  scint_waveforms[1].addSample(digiSampleValue[i]);
 
       } //end loop over digis
-  } //end loop over entries
+    
+    Waveform::baseline_informations mcp_pedestals[MCP_DIGI_CHANNELS];
+    Waveform::max_amplitude_informations mcp_max[MCP_DIGI_CHANNELS];
+    //Simple shape analysis
+    for (unsigned int i(0);i<MCP_DIGI_CHANNELS;++i)
+      {
+	mcp_pedestals[i]=mcp_waveforms[i].baseline(5,44); //use 40 samples between 5-44 to get pedestal and RMS
+	mcp_waveforms[i].offset(mcp_pedestals[i].pedestal);
+	if (i!=4)
+	  mcp_waveforms[i].rescale(-1); //invert Buderk MCPs signal
+	mcp_max[i]=mcp_waveforms[i].max_amplitude(150,350); //find max amplitude between 50 and 500 samples
+      }
 
+    Waveform::baseline_informations scint_pedestals[SCINT_DIGI_CHANNELS];
+    Waveform::max_amplitude_informations scint_max[SCINT_DIGI_CHANNELS];
+    //Simple shape analysis
+    for (unsigned int i(0);i<SCINT_DIGI_CHANNELS;++i)
+      {
+	scint_pedestals[i]=scint_waveforms[i].baseline(5,44); //use 40 samples between 5-44 to get pedestal and RMS
+	scint_waveforms[i].offset(scint_pedestals[i].pedestal);
+	scint_waveforms[i].rescale(-1); //invert Buderk MCPs signal
+	scint_max[i]=scint_waveforms[i].max_amplitude(650,900); //find max amplitude between 50 and 500 samples
+      }
+  } //end loop over entries
+  
 } //end of function
 

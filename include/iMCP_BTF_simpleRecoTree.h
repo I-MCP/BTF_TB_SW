@@ -15,6 +15,7 @@ class iMCP_BTF_simpleRecoTree : public iMCP_BTF_rawDataTree
  public :
   TString outFile;
   TTree* outTree;
+  int maxEntries=-1;
 
   iMCP_BTF_simpleRecoTree_format treeData;
 
