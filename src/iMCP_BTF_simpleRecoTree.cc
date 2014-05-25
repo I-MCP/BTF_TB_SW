@@ -56,6 +56,7 @@ void iMCP_BTF_simpleRecoTree::bookWaveform(TString name, waveform_data& waveform
   tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
   tree->Branch(name+"_max_amplitude",&waveform.max_amplitude,name+"_max_amplitude/F");
   tree->Branch(name+"_time_at_frac",&waveform.time_at_frac,name+"_time_at_frac/F");
+  tree->Branch(name+"_time_at_max",&waveform.time_at_max,name+"_time_at_max/F");
   tree->Branch(name+"_samples",waveform.samples,name+Form("_samples[%d]/F",DIGI_SAMPLES_TO_STORE));
 }
 
@@ -186,6 +187,7 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	treeData._mcpData.mcp_digi_data[i].pedestal=mcp_pedestals[i].pedestal;
 	treeData._mcpData.mcp_digi_data[i].pedestal_rms=mcp_pedestals[i].rms;
 	treeData._mcpData.mcp_digi_data[i].max_amplitude=mcp_max[i].max_amplitude;
+	treeData._mcpData.mcp_digi_data[i].time_at_max=mcp_max[i].time_at_max;
 	treeData._mcpData.mcp_digi_data[i].time_at_frac=-1; //not yet filled
 
 	//Filling interesting samples
@@ -205,6 +207,7 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	treeData._scintData.scint_digi_data[i].pedestal=scint_pedestals[i].pedestal;
 	treeData._scintData.scint_digi_data[i].pedestal_rms=scint_pedestals[i].rms;
 	treeData._scintData.scint_digi_data[i].max_amplitude=scint_max[i].max_amplitude;
+	treeData._scintData.scint_digi_data[i].time_at_max=scint_max[i].time_at_max;
 	treeData._scintData.scint_digi_data[i].time_at_frac=-1; //not yet filled
 
 	//Filling interesting samples
