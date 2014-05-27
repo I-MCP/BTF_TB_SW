@@ -1,6 +1,6 @@
 // compile with: g++ -o doAnalysis `root-config --cflags --glibs` doAnalysis.cpp
 // or: g++ -o doAnalysis doAnalysis.cpp `root-config --cflags --glibs`
-//Launch eg: ./doAnalysis SetUp/Scan1_0_ON_5_ON_4_OFF_3_OFF_1_ON.dat output
+//Launch eg: ./doAnalysis inputDir SetUp/Scan1_0_ON_5_ON_4_OFF_3_OFF_1_ON.dat outputDir
 
 #include "TApplication.h"
 #include "TH1F.h"
@@ -41,8 +41,9 @@
 int main (int argc, char** argv)
 {  
 //-------Read data config files-----------------------------------------------
-    std::string inputName = std::string(argv[1]);
-    char* outputDir = argv[2];
+    char* inputDir = argv[1];
+    std::string inputName = std::string(argv[2]);
+    char* outputDir = argv[3];
      
     std::string outDir = outputDir;
     
@@ -56,9 +57,17 @@ int main (int argc, char** argv)
     
     split_char = '_';
     std::vector<std::string> tokens_name;
-    std::istringstream split_name(tokens.at(1));
+    
+    int icut = 0;
+    for(unsigned int ii = 0; ii < tokens.size(); ii++)
+        if(tokens.at(ii).find("Scan") != std::string::npos) icut = ii;
+
+    std::istringstream split_name(tokens.at(icut));
     for(std::string each; getline(split_name, each, split_char); 
         tokens_name.push_back(each));
+  
+    for(int ii = 0; ii < tokens_name.size(); ii++)
+        std::cout << ii << " - " << tokens_name.at(ii) << std::endl;
 
     const int Ch_ref1 = atoi((tokens_name.at(1)).c_str());
     const int Ch_ref2 = atoi((tokens_name.at(3)).c_str());
@@ -69,12 +78,12 @@ int main (int argc, char** argv)
     std::vector<std::string> nameMCP;
     nameMCP.push_back("MiB1");
     nameMCP.push_back("MiB2");
-    if(argc > 3) nameMCP.at(2) = "Roma1";
+    if(argc > 4) nameMCP.at(2) = "Roma1";
     nameMCP.push_back("ScB");
     nameMCP.push_back("Planacon");
     nameMCP.push_back("MiB3");
     nameMCP.push_back("Roma2");
-
+   
     std::vector<std::string> pcMCP;                                     
     for(unsigned int ii=0; ii<nameMCP.size(); ++ii) pcMCP.push_back("");
     pcMCP.at(Ch_ref1) = tokens_name.at(2);
@@ -83,7 +92,7 @@ int main (int argc, char** argv)
     pcMCP.at(Ch_2) = tokens_name.at(8);
     pcMCP.at(Ch_3) = tokens_name.at(10);
     pcMCP.at(Ch_3).erase(pcMCP.at(Ch_3).size()-4, pcMCP.at(Ch_3).size()-1);
-    
+ 
 //--------Definition----------------------------------------------------------
     int nFiles=1;
     //---coincidence tree
@@ -102,9 +111,9 @@ int main (int argc, char** argv)
     //---open output files    
     std::ofstream data1((outDir+"/"+tokens_name.at(0)+"_"+nameMCP.at(Ch_1)+"_pc_"+pcMCP.at(Ch_1)+".dat").c_str());
     std::ofstream data2((outDir+"/"+tokens_name.at(0)+"_"+nameMCP.at(Ch_2)+"_pc_"+pcMCP.at(Ch_2)+".dat").c_str());
-	std::ofstream data3((outDir+"/"+tokens_name.at(0)+"_"+nameMCP.at(Ch_3)+"_pc_"+pcMCP.at(Ch_3)+".dat").c_str());
+    std::ofstream data3((outDir+"/"+tokens_name.at(0)+"_"+nameMCP.at(Ch_3)+"_pc_"+pcMCP.at(Ch_3)+".dat").c_str());
     //---do runs loop
-    ifstream log (argv[1], ios::in);
+    ifstream log (argv[2], ios::in);
     while(log >> nFiles)
     {
         //-----Run dependend definition
@@ -123,9 +132,9 @@ int main (int argc, char** argv)
         {
             log >> id;
             char id_str[40];
-            sprintf(id_str, "WaveForms_BTF/run_IMCP_%d_*.root", id);
+            sprintf(id_str, (std::string(inputDir)+"/run_IMCP_%d_*.root").c_str(), id);
             chain->Add(id_str);
-            cout << "Reading:  WaveForms_BTF/run_IMCP_" << id << endl;
+            cout << "Reading: run_IMCP_" << id << endl;
         }
         log >> HV1 >> HV2 >> HV3;
         //-----Data loop-------------------------------------------------------- 
