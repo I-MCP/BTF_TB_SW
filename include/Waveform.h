@@ -60,6 +60,20 @@ class Waveform
   //Get the baseline (pedestal and RMS) informations computed between x1 and x2
   baseline_informations baseline(const int& x1, const int& x2) const;
 
+  float integral(const int& x1, const int& x2) const
+  {
+    float integral=0;
+    for(int bin=x1; bin<x2; bin++)
+      integral += _samples[bin];
+    return integral;
+  };
+
+  //clear
+  void clear()
+  {
+    _samples.clear();
+  };
+
   //substract a fixed value from the samples
   void offset(const float& value)
   {

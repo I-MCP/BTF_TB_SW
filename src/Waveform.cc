@@ -75,7 +75,53 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 //Get the time at a given fraction of the amplitude for times between x1 and x2 
 float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate) const
 {
+  float xx= 0.;
+  float xy= 0.;
+  float Sx = 0.;
+  float Sy = 0.;
+  float Sxx = 0.;
+  float Sxy = 0.;
+  float Chi2 = 0.;
+  int minSample=x1;
+  int cfSample=x1; // first sample over AmpMax*CF 
+  float minValue=0;
+  
+
+  for(int iSample=(int)maxInfos.time_at_max; iSample>x1; iSample--)
+    {
+      if(_samples[iSample] > maxInfos.max_amplitude*frac) 
+        {
+	  cfSample = iSample;
+	  break;
+        }
+    }
+  for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
+    {
+      if(cfSample+n<0) continue;
+      xx = (cfSample+n)*(cfSample+n);
+      xy = (cfSample+n)*(_samples[cfSample+n]);
+      Sx = Sx + (cfSample+n);
+      Sy = Sy + _samples[cfSample+n];
+      Sxx = Sxx + xx;
+      Sxy = Sxy + xy;
+    }
+
+  float Delta = SampleToInterpolate*Sxx - Sx*Sx;
+  float A = (Sxx*Sy - Sx*Sxy) / Delta;
+  float B = (SampleToInterpolate*Sxy - Sx*Sy) / Delta;
+  
+  float sigma2 = pow(0.2/sqrt(12)*B,2);
+  
+  for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
+    {
+      if(cfSample+n<0) continue;
+      Chi2 = Chi2 + pow(_samples[cfSample+n] - A - B*((cfSample+n)),2)/sigma2;
+    } 
+  // A+Bx = frac * amp
+  float interpolation = (_samples[minSample] * frac - A) / B;
+  return interpolation;				
 };
+
 
 //Get the baseline (pedestal and RMS) informations computed between x1 and x2
 Waveform::baseline_informations Waveform::baseline(const int& x1, const int& x2) const

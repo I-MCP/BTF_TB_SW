@@ -4,7 +4,8 @@
 #pragma link off all functions;
 #pragma link C++ nestedclasses;
 #pragma link C++ class iMCP_BTF_simpleRecoTree+;
+#pragma link C++ class iMCP_BTF_simpleEffAnalysis+;
 #pragma link C++ class iMCP_BTF_simpleRecoTree_format+;
-#pragma link C++ class Waveform+;
 #pragma link C++ class iMCP_BTF_rawDataTree+;
+#pragma link C++ class Waveform+;
 #endif
