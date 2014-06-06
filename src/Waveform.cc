@@ -4,6 +4,7 @@
 #include "TF1.h"
 #include "TMath.h"
 
+#define WARNING_ERROR 0
 ClassImp(Waveform);
 
 Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, const int& x2, int nSamplesAroundMax) const
@@ -12,7 +13,8 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 
   if (x1<0 || x2>(_samples.size()-1))
     {
-      std::cout << "WARNING::Waveform::max_amplitude::gate is outside samples range" << std::endl;
+      if (WARNING_ERROR)
+	std::cout << "WARNING::Waveform::max_amplitude::gate is outside samples range" << std::endl;
       return return_value;
     }
 
@@ -44,7 +46,8 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 	    }
 	  else
 	    {
-	      std::cout << "WARNING::Waveform::max_amplitude::maximum found too close to gate edges. Increase gate width" << std::endl;
+	      if (WARNING_ERROR)
+		std::cout << "WARNING::Waveform::max_amplitude::maximum found too close to gate edges. Increase gate width" << std::endl;
 	    }
 	}
 
@@ -63,7 +66,8 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 	}
       else
 	{
-	  std::cout << "WARNING::Waveform::max_amplitude::not enough samples to fit fot maximum. Returning unfitted position" << std::endl;
+	  if (WARNING_ERROR)
+	    std::cout << "WARNING::Waveform::max_amplitude::not enough samples to fit fot maximum. Returning unfitted position" << std::endl;
 	  return_value.max_amplitude=max;
 	  return_value.time_at_max=imax;
 	}
@@ -89,7 +93,7 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 
   for(int iSample=(int)maxInfos.time_at_max; iSample>x1; iSample--)
     {
-      if(_samples[iSample] > maxInfos.max_amplitude*frac) 
+      if(_samples[iSample] < maxInfos.max_amplitude*frac) 
         {
 	  cfSample = iSample;
 	  break;
@@ -110,7 +114,7 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
   float A = (Sxx*Sy - Sx*Sxy) / Delta;
   float B = (SampleToInterpolate*Sxy - Sx*Sy) / Delta;
   
-  float sigma2 = pow(0.2/sqrt(12)*B,2);
+  float sigma2 = pow(1./sqrt(12)*B,2);
   
   for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
     {
@@ -131,13 +135,15 @@ Waveform::baseline_informations Waveform::baseline(const int& x1, const int& x2)
 
   if (x1<0 || x2>(_samples.size()-1))
     {
-      std::cout << "WARNING::Waveform::baseline::gate is outside samples range" << std::endl;
+      if (WARNING_ERROR)
+	std::cout << "WARNING::Waveform::baseline::gate is outside samples range" << std::endl;
       return return_value;
     }
   
   if ((x2-x1)<2)
     {
-      std::cout << "WARNING::Waveform::baseline::you need >2 samples to get pedestal & rms" << std::endl;
+      if (WARNING_ERROR)
+	std::cout << "WARNING::Waveform::baseline::you need >2 samples to get pedestal & rms" << std::endl;
       return return_value;
     }
 
