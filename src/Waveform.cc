@@ -19,10 +19,11 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
     }
 
   int imax=-1;
-  int max=-999999.;
+  float max=-999999.;
 
   for (unsigned int i(x1);i<=x2;++i)
     {
+      //      std::cout << "++++ " <<  i << "," << _times[i] << "," << _samples[i] << "," << max << "," << imax << std::endl;
       if (_samples[i]>=max)
 	{
 	  max=_samples[i];
@@ -40,8 +41,11 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 	{
 	  if ( (imax-(nSamplesAroundMax-1)/2+i)>=x1 && (imax-(nSamplesAroundMax-1)/2+i)<=x2)
 	    {
-	      x[i]=imax-(nSamplesAroundMax-1)/2+i;
+	      //	      x[i]=imax-(nSamplesAroundMax-1)/2+i;
+	      x[i]=_times[imax-(nSamplesAroundMax-1)/2+i]*1e9;
 	      y[i]=_samples[imax-(nSamplesAroundMax-1)/2+i];
+	      //	      std::cout <<  imax << "," << imax-(nSamplesAroundMax-1)/2+i << "," << x[i] << "," << y[i] << std::endl;
+      
 	      ++nSamples;
 	    }
 	  else
@@ -60,7 +64,8 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 	  //FIXME Add a check on the FIT status
 	  double *par=graph->GetFunction("pol2")->GetParameters();
 	  return_value.max_amplitude=par[0]-(par[1]*par[1]/(4*par[2]));
-	  return_value.time_at_max=-par[1]/(2*par[2]);
+	  return_value.time_at_max=-(par[1]/(2*par[2]))/1.e9;
+	  return_value.sample_at_max=imax;
 
 	  delete graph;
 	}
@@ -69,7 +74,8 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 	  if (WARNING_ERROR)
 	    std::cout << "WARNING::Waveform::max_amplitude::not enough samples to fit fot maximum. Returning unfitted position" << std::endl;
 	  return_value.max_amplitude=max;
-	  return_value.time_at_max=imax;
+	  return_value.time_at_max=_times[imax];
+	  return_value.sample_at_max=imax;
 	}
 
     }
@@ -77,53 +83,124 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
 };
 
 //Get the time at a given fraction of the amplitude for times between x1 and x2 
+float Waveform::time_at_frac(const float& t1, const float& t2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate) const
+{
+  //std::cout << "_____ " << t1 << "," << t2 << std::endl;
+  int tmin=0;
+  int tmax=0;
+  for (unsigned int i(0);i<_times.size();++i)
+    {
+      //      std::cout << i << "," << _times[i] << std::endl;
+      if (_times[i]<t1)
+	tmin=i;
+      if (_times[i]<t2)
+	tmax=i;
+    }
+
+  return time_at_frac(tmin,tmax,frac,maxInfos,SampleToInterpolate);
+}
+
+//Get the time at a given fraction of the amplitude for times between x1 and x2 
 float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate) const
 {
-  float xx= 0.;
-  float xy= 0.;
-  float Sx = 0.;
-  float Sy = 0.;
-  float Sxx = 0.;
-  float Sxy = 0.;
-  float Chi2 = 0.;
-  int minSample=x1;
-  int cfSample=x1; // first sample over AmpMax*CF 
-  float minValue=0;
-  
+  int cfSample;
 
-  for(int iSample=(int)maxInfos.time_at_max; iSample>x1; iSample--)
+  //  std::cout << "===== " << x1 << "," << x2 << std::endl;
+  for(int iSample=(int)maxInfos.sample_at_max; iSample>x1; iSample--)
     {
       if(_samples[iSample] < maxInfos.max_amplitude*frac) 
-        {
+	{
 	  cfSample = iSample;
-	  break;
-        }
+ 	  break;
+	}
     }
-  for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
+  
+  //std::cout <<  "++++ "  << cfSample << std::endl;
+  if (cfSample>-1)
     {
-      if(cfSample+n<0) continue;
-      xx = (cfSample+n)*(cfSample+n);
-      xy = (cfSample+n)*(_samples[cfSample+n]);
-      Sx = Sx + (cfSample+n);
-      Sy = Sy + _samples[cfSample+n];
-      Sxx = Sxx + xx;
-      Sxy = Sxy + xy;
-    }
+      double x[SampleToInterpolate];
+      double y[SampleToInterpolate];
+      int nSamples=0;
+      for (unsigned int i(0);i<SampleToInterpolate;++i)
+	{
+	  if ( (cfSample-(SampleToInterpolate-1)/2+i)>=x1 && (cfSample-(SampleToInterpolate-1)/2+i)<=x2)
+	    {
+	      //	      x[i]=cfSample-(SampleToInterpolate-1)/2+i;
+	      x[i]=_times[cfSample-(SampleToInterpolate-1)/2+i]*1e9;
+	      y[i]=_samples[cfSample-(SampleToInterpolate-1)/2+i]-maxInfos.max_amplitude*frac;
+	      //std::cout <<  cfSample << "," << cfSample-(SampleToInterpolate-1)/2+i << "," << x[i] << "," << y[i] << std::endl;
+      
+	      ++nSamples;
+	    }
+	  else
+	    {
+	      if (WARNING_ERROR)
+		std::cout << "WARNING::Waveform::max_amplitude::maximum found too close to gate edges. Increase gate width" << std::endl;
+	    }
+	}
 
-  float Delta = SampleToInterpolate*Sxx - Sx*Sx;
-  float A = (Sxx*Sy - Sx*Sxy) / Delta;
-  float B = (SampleToInterpolate*Sxy - Sx*Sy) / Delta;
+      if (nSamples>3)
+	{
+	  //Now fit with parabolic function around maximum value
+	  TGraph* graph=new TGraph(nSamples,x,y);
+	  graph->Fit("pol1","Q0+");
+
+	  //FIXME Add a check on the FIT status
+	  double *par=graph->GetFunction("pol1")->GetParameters();
+
+	  return -(par[0]/par[1])/1.e9;
+	  delete graph;
+	}
+      else
+	{
+	  if (WARNING_ERROR)
+	    std::cout << "WARNING::Waveform::max_amplitude::not enough samples to fit fot maximum. Returning unfitted position" << std::endl;
+	  return _times[cfSample];
+	}
+
+    }
+   
+//   float xx= 0.;
+//   float xy= 0.;
+//   float Sx = 0.;
+//   float Sy = 0.;
+//   float Sxx = 0.;
+//   float Sxy = 0.;
+//   float Chi2 = 0.;
+//   int minSample=x1;
+//   int cfSample=x1; // first sample over AmpMax*CF 
+//   float minValue=0;
   
-  float sigma2 = pow(1./sqrt(12)*B,2);
+
+
+//   for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
+//     {
+//       if(cfSample+n<0) continue;
+//       double x=_times[cfSample+n]*1.e9;
+//       xx = (x)*(x);
+//       xy = (x)*(_samples[cfSample+n]);
+//       Sx = Sx + (x);
+//       Sy = Sy + _samples[cfSample+n];
+//       Sxx = Sxx + xx;
+//       Sxy = Sxy + xy;
+//     }
+
+//   float Delta = SampleToInterpolate*Sxx - Sx*Sx;
+//   float A = (Sxx*Sy - Sx*Sxy) / Delta;
+//   float B = (SampleToInterpolate*Sxy - Sx*Sy) / Delta;
   
-  for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
-    {
-      if(cfSample+n<0) continue;
-      Chi2 = Chi2 + pow(_samples[cfSample+n] - A - B*((cfSample+n)),2)/sigma2;
-    } 
-  // A+Bx = frac * amp
-  float interpolation = (_samples[minSample] * frac - A) / B;
-  return interpolation;				
+//   float sigma2 = pow(1./sqrt(12)*B,2);
+  
+//   for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
+//     {
+//       if(cfSample+n<0) continue;
+//       Chi2 = Chi2 + pow(_samples[cfSample+n] - A - B*((_times[cfSample+n]*1.e9)),2)/sigma2;
+//     } 
+//   // A+Bx = frac * amp
+//   float interpolation = (_samples[minSample] * frac - A) / B;
+//   return interpolation;				
+
+
 };
 
 
