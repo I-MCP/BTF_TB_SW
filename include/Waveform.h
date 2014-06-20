@@ -68,6 +68,9 @@ class Waveform
     _times.push_back(time);
   }
 
+  //open a window of nSamples centered keeping into account where is the maximum and some characteristics of the shape
+  void find_interesting_samples(int nSamples, const max_amplitude_informations& maxInfos, float riseTime, float fallTime, int& x1,int &x2);
+
   //Get the max amplitude between x1 and x2 using nSamplesAroundMax samples and a parabolic fit
   max_amplitude_informations max_amplitude(const int& x1, const int& x2, int nSamplesAroundMax=5) const;
 

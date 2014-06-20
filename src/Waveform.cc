@@ -7,6 +7,8 @@
 #define WARNING_ERROR 0
 ClassImp(Waveform);
 
+using namespace std;
+
 Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, const int& x2, int nSamplesAroundMax) const
 {
   max_amplitude_informations return_value;  
@@ -103,10 +105,11 @@ float Waveform::time_at_frac(const float& t1, const float& t2, const float& frac
 //Get the time at a given fraction of the amplitude for times between x1 and x2 
 float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate) const
 {
-  int cfSample;
+  int cfSample=maxInfos.sample_at_max;
 
   //  std::cout << "===== " << x1 << "," << x2 << std::endl;
-  for(int iSample=(int)maxInfos.sample_at_max; iSample>x1; iSample--)
+
+  for(int iSample=(int)maxInfos.sample_at_max; iSample>max(x1,0); iSample--)
     {
       if(_samples[iSample] < maxInfos.max_amplitude*frac) 
 	{
@@ -115,7 +118,7 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 	}
     }
   
-  //std::cout <<  "++++ "  << cfSample << std::endl;
+  //  std::cout <<  "++++ "  << cfSample << std::endl;
   if (cfSample>-1)
     {
       double x[SampleToInterpolate];
@@ -123,7 +126,7 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
       int nSamples=0;
       for (unsigned int i(0);i<SampleToInterpolate;++i)
 	{
-	  if ( (cfSample-(SampleToInterpolate-1)/2+i)>=x1 && (cfSample-(SampleToInterpolate-1)/2+i)<=x2)
+	  if ( (cfSample-(SampleToInterpolate-1)/2+i)>=max(x1,0) && (cfSample-(SampleToInterpolate-1)/2+i)<=min(x2,(int)_samples.size()))
 	    {
 	      //	      x[i]=cfSample-(SampleToInterpolate-1)/2+i;
 	      x[i]=_times[cfSample-(SampleToInterpolate-1)/2+i]*1e9;
@@ -204,6 +207,49 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 };
 
 
+void Waveform::find_interesting_samples(int nSamples, const max_amplitude_informations& maxInfos, float riseTime, float fallTime, int& x1,int &x2)
+{
+  //std::cout << "_____ " << t1 << "," << t2 << std::endl;
+  int tmin=0;
+  int tmax=0;
+  for (unsigned int i(0);i<_times.size();++i)
+    {
+      //      std::cout << i << "," << _times[i] << std::endl;
+      if (_times[i]<maxInfos.time_at_max-2.*riseTime)
+	tmin=i;
+      if (_times[i]<maxInfos.time_at_max+1.*fallTime)
+	tmax=i;
+    }
+
+  if ((tmax-tmin+1)==nSamples)
+    {
+      x1=tmin;
+      x2=tmax;
+    }
+  else if ((tmax-tmin+1)<nSamples)
+    {
+      if (_samples.size()<nSamples)
+	{
+	  x1=0;
+	  x2=_samples.size()-1;
+	}
+      else if (tmin+nSamples-1<_samples.size())
+	{
+	  x1=tmin;
+	  x2=(tmin+nSamples-1);
+	}
+      else
+	{
+	  x2=_samples.size();
+	  x1=x2-nSamples+1;
+	}
+    }
+  else if ((tmax-tmin+1)>nSamples)
+    {
+      x1=tmin;
+      x2=(tmin+nSamples-1);
+    }
+}
 //Get the baseline (pedestal and RMS) informations computed between x1 and x2
 Waveform::baseline_informations Waveform::baseline(const int& x1, const int& x2) const
 {

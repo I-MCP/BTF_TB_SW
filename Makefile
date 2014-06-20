@@ -4,7 +4,7 @@ ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs)
 
 BOOSTINC      = $(shell cd $(CMSSW_BASE); scram tool tag boost INCLUDE)
 BOOSTLIB      = $(shell cd $(CMSSW_BASE); scram tool tag boost LIBDIR)
-BOOSTLIBS     = $(shell cd $(CMSSW_BASE); scram tool tag boost LIB)
+BOOSTLIBS     = -lboost_regex
 
 BINFILES = $(wildcard src/*.cpp)
 
@@ -31,7 +31,7 @@ OBJDIR=$(LIBDIR)/objects
 INCLUDES += -I. -I./include/ -I$(ROOTSYS)/include -I$(BOOSTINC)
 ROOTSYS  ?= ERROR_RootSysIsNotDefined
 
-EXTRALIBS  := -L$(LIBDIR) -l$(PACKAGE) 
+EXTRALIBS  := -L$(LIBDIR) -l$(PACKAGE) -L$(BOOSTLIB) $(BOOSTLIBS)
 
 HHLIST=$(filter-out include/$(PACKAGE)_LinkDef.h,$(wildcard include/*.h))
 
