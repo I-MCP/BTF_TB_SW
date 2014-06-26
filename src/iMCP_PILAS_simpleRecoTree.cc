@@ -62,8 +62,11 @@ void iMCP_PILAS_simpleRecoTree::cannotOpenFile(const char * file)
 #define MCP_1_DIGITIZER_CHANNEL 1
 #define TR_0_DIGITIZER_CHANNEL 8
 
+
 void iMCP_PILAS_simpleRecoTree::Loop()
 {
+  float pedestals[CHANNELS_TO_ANALYZE]={3575.,3545.,2210.};
+
   if (fChain == 0) return;
  
   TFile *out = TFile::Open(outFile,"RECREATE");  
@@ -132,13 +135,13 @@ void iMCP_PILAS_simpleRecoTree::Loop()
 	  std::cout << "WARNING DIGI channel is unknown!" << std::endl;
 
 	if ( digiChannel[i]==MCP_0_DIGITIZER_CHANNEL )
-	  channels_waveforms[0].addTimeAndSample(digiSampleValue[i],digiSampleIndex[i]*0.2e-9);
+	  channels_waveforms[0].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 	if (digiChannel[i]==MCP_1_DIGITIZER_CHANNEL )
-	  channels_waveforms[1].addTimeAndSample(digiSampleValue[i],digiSampleIndex[i]*0.2e-9);
+	  channels_waveforms[1].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 	if (digiChannel[i]==TR_0_DIGITIZER_CHANNEL )
-	  channels_waveforms[2].addTimeAndSample(digiSampleValue[i],digiSampleIndex[i]*0.2e-9);
+	  channels_waveforms[2].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
       } //end loop over digis
 
@@ -146,12 +149,13 @@ void iMCP_PILAS_simpleRecoTree::Loop()
     Waveform::max_amplitude_informations channels_max[CHANNELS_TO_ANALYZE];
     for (unsigned int i(0);i<CHANNELS_TO_ANALYZE;++i)
       {
-	  channels_pedestals[i]=channels_waveforms[i].baseline(1,10); 
-	  channels_waveforms[i].offset(channels_pedestals[i].pedestal);
+	  channels_pedestals[i]=channels_waveforms[i].baseline(20,50); 
+	  channels_waveforms[i].offset(pedestals[i]);
+	  //	  channels_waveforms[i].offset(channels_pedestals[i].pedestal);
 	  channels_waveforms[i].rescale(-1); 
-	  channels_max[i]=channels_waveforms[i].max_amplitude(26,channels_waveforms[i]._samples.size()-50,5); //find max amplitude between 50 and 500 samples
-	  float cft_30 = channels_waveforms[i].time_at_frac(channels_max[i].time_at_max - 3.e-9, channels_max[i].time_at_max, 0.3,  channels_max[i],5);
-	  float cft_50 = channels_waveforms[i].time_at_frac(channels_max[i].time_at_max - 3.e-9, channels_max[i].time_at_max, 0.5,  channels_max[i],5);
+	  channels_max[i]=channels_waveforms[i].max_amplitude(100,channels_waveforms[i]._samples.size()-100,5); //find max amplitude between 50 and 500 samples
+	  float cft_30 = channels_waveforms[i].time_at_frac(channels_max[i].time_at_max - 3.e-9, channels_max[i].time_at_max, 0.3,  channels_max[i],7);
+	  float cft_50 = channels_waveforms[i].time_at_frac(channels_max[i].time_at_max - 3.e-9, channels_max[i].time_at_max, 0.5,  channels_max[i],7);
 
 	  treeData._channelsData.channels_digi_data[i].pedestal=channels_pedestals[i].pedestal; //storing data in mV
 	  treeData._channelsData.channels_digi_data[i].pedestal_rms=channels_pedestals[i].rms;

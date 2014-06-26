@@ -59,7 +59,10 @@ class Waveform
   void addSample(const float& sample, float sampleTimeSize=0.2e-9)
   {
     _samples.push_back(sample);
-    _times.push_back(_times.back()+sampleTimeSize);
+    if (_times.size()>0)
+      _times.push_back(_times.back()+sampleTimeSize);
+    else
+      _times.push_back(0.);
   }
   
   void addTimeAndSample(const float& time, const float& sample)
