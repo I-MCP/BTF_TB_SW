@@ -15,131 +15,133 @@
 
 #include <TROOT.h>
 
-struct eventInfo
+namespace iMCP_BTF_simpleRecoTree_namespace
 {
-  unsigned int evtNumber;
-  unsigned int evtTimestamp;
-  unsigned int evtTimedist;
-  unsigned int evtTimeSinceStart;
-};
-
-struct tdc_data
-{
-  int tdc_nCounts;
-  float tdc_measurements[MAX_TDC_MEASUREMENTS];
-
-  void clear()
+  struct eventInfo
   {
-    for (unsigned int i(0);i<MAX_TDC_MEASUREMENTS;++i)
-      tdc_measurements[i]=-1;
-    tdc_nCounts=0;
+    unsigned int evtNumber;
+    unsigned int evtTimestamp;
+    unsigned int evtTimedist;
+    unsigned int evtTimeSinceStart;
   };
 
-};
-
-struct waveform_data
-{
-  float pedestal; //from pre-samples;
-  float pedestal_rms; //from pre-samples;
-  float max_amplitude; //max_value;
-  float time_at_max; //emualated constant fraction data
-  float time_at_frac; //emualated constant fraction data
-  float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
-  int sampleIndex[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
-
-  void clear()
+  struct tdc_data
   {
-    pedestal=-1;
-    pedestal_rms=-1;
-    max_amplitude=-1;
-    time_at_max=-1;
-    time_at_frac=-1;
-    for (unsigned int i(0);i<DIGI_SAMPLES_TO_STORE;++i)
-      {
-	samples[i]=-999;
-	sampleIndex[i]=-1;
-      }
-  };
-};
+    int tdc_nCounts;
+    float tdc_measurements[MAX_TDC_MEASUREMENTS];
 
-struct hodoscope_plane_data
-{
-  int nHodoPlaneClusters; //number of clusters (particles) crossing x hodoscope
-  float hodoPlaneClusterPosition[MAX_HODO_CLUSTER];
-  float hodoPlaneClusterRawAdcCount[MAX_HODO_CLUSTER]; 
-  void clear()
-  {
-    nHodoPlaneClusters=0;
-    for (unsigned int i(0);i<MAX_HODO_CLUSTER;++i)
-      {
-	hodoPlaneClusterPosition[i]=-1;
-	hodoPlaneClusterRawAdcCount[i]=-1;
-      }
-  };
-};
+    void clear()
+    {
+      for (unsigned int i(0);i<MAX_TDC_MEASUREMENTS;++i)
+	tdc_measurements[i]=-1;
+      tdc_nCounts=0;
+    };
 
-struct hodoscope_data
-{
-  hodoscope_plane_data hodoXClusters;
-  hodoscope_plane_data hodoYClusters;
-
-  void clear()
-  {
-    hodoXClusters.clear();
-    hodoYClusters.clear();
   };
 
-};
-
-struct scint_data
-{
-  float scint_adc_data[SCINT_ADC_CHANNELS]; //scint front and back adc count (pedestal substracted)
-  waveform_data scint_digi_data[SCINT_DIGI_CHANNELS]; //scint waveforms
-
-  void clear()
+  struct waveform_data
   {
-    for (unsigned int i(0);i<SCINT_ADC_CHANNELS;++i)
-      scint_adc_data[i]=-999;
-    for (unsigned int i(0);i<SCINT_DIGI_CHANNELS;++i)
-      scint_digi_data[i].clear();
-  };
-};
+    float pedestal; //from pre-samples;
+    float pedestal_rms; //from pre-samples;
+    float max_amplitude; //max_value;
+    float time_at_max; //emualated constant fraction data
+    float time_at_frac; //emualated constant fraction data
+    float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+    int sampleIndex[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
 
-struct mcp_data
-{
-  tdc_data mcp_tdc_data[MCP_TDC_CHANNELS]; 
-  waveform_data mcp_digi_data[MCP_DIGI_CHANNELS]; //mcp waveforms
-
-  void clear()
-  {
-    for (unsigned int i(0);i<MCP_TDC_CHANNELS;++i)
-      mcp_tdc_data[i].clear();
-    for (unsigned int i(0);i<MCP_DIGI_CHANNELS;++i)
-      mcp_digi_data[i].clear();
-  };
-};
-
-struct iMCP_BTF_simpleRecoTree_format
-{
-  eventInfo _evtInfo;
-
-  //Scintillator front[0] & back[1] data
-  scint_data _scintData;
-
-  //hodoscope reconstructed positions in X&Y planes
-  hodoscope_data _hodoData;
-
-  //MCP data
-  mcp_data _mcpData;
-
-  void clear()
-  {
-    _mcpData.clear();
-    _hodoData.clear();
-    _scintData.clear();
+    void clear()
+    {
+      pedestal=-1;
+      pedestal_rms=-1;
+      max_amplitude=-1;
+      time_at_max=-1;
+      time_at_frac=-1;
+      for (unsigned int i(0);i<DIGI_SAMPLES_TO_STORE;++i)
+	{
+	  samples[i]=-999;
+	  sampleIndex[i]=-1;
+	}
+    };
   };
 
-  ClassDef(iMCP_BTF_simpleRecoTree_format,1);
-};
+  struct hodoscope_plane_data
+  {
+    int nHodoPlaneClusters; //number of clusters (particles) crossing x hodoscope
+    float hodoPlaneClusterPosition[MAX_HODO_CLUSTER];
+    float hodoPlaneClusterRawAdcCount[MAX_HODO_CLUSTER]; 
+    void clear()
+    {
+      nHodoPlaneClusters=0;
+      for (unsigned int i(0);i<MAX_HODO_CLUSTER;++i)
+	{
+	  hodoPlaneClusterPosition[i]=-1;
+	  hodoPlaneClusterRawAdcCount[i]=-1;
+	}
+    };
+  };
 
+  struct hodoscope_data
+  {
+    hodoscope_plane_data hodoXClusters;
+    hodoscope_plane_data hodoYClusters;
+
+    void clear()
+    {
+      hodoXClusters.clear();
+      hodoYClusters.clear();
+    };
+
+  };
+
+  struct scint_data
+  {
+    float scint_adc_data[SCINT_ADC_CHANNELS]; //scint front and back adc count (pedestal substracted)
+    waveform_data scint_digi_data[SCINT_DIGI_CHANNELS]; //scint waveforms
+
+    void clear()
+    {
+      for (unsigned int i(0);i<SCINT_ADC_CHANNELS;++i)
+	scint_adc_data[i]=-999;
+      for (unsigned int i(0);i<SCINT_DIGI_CHANNELS;++i)
+	scint_digi_data[i].clear();
+    };
+  };
+
+  struct mcp_data
+  {
+    tdc_data mcp_tdc_data[MCP_TDC_CHANNELS]; 
+    waveform_data mcp_digi_data[MCP_DIGI_CHANNELS]; //mcp waveforms
+
+    void clear()
+    {
+      for (unsigned int i(0);i<MCP_TDC_CHANNELS;++i)
+	mcp_tdc_data[i].clear();
+      for (unsigned int i(0);i<MCP_DIGI_CHANNELS;++i)
+	mcp_digi_data[i].clear();
+    };
+  };
+
+  struct iMCP_BTF_simpleRecoTree_format
+  {
+    eventInfo _evtInfo;
+
+    //Scintillator front[0] & back[1] data
+    scint_data _scintData;
+
+    //hodoscope reconstructed positions in X&Y planes
+    hodoscope_data _hodoData;
+
+    //MCP data
+    mcp_data _mcpData;
+
+    void clear()
+    {
+      _mcpData.clear();
+      _hodoData.clear();
+      _scintData.clear();
+    };
+
+    ClassDef(iMCP_BTF_simpleRecoTree_format,1);
+  };
+}
 #endif

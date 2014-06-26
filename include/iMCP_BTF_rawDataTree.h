@@ -73,53 +73,53 @@ class iMCP_BTF_rawDataTree {
 public :
   std::map<TString,TObject*> outObjects;
   std::string          outFile;
-   TTree          *fChain;   //!pointer to the analyzed TTree or TChain
-   Int_t           fCurrent; //!current Tree number in a TChain
-
-   // Declaration of leaf types
-   UInt_t          evtNumber;
-   UInt_t          evtTimeDist;
-   UInt_t          evtTimeStart;
-   UInt_t          evtTime;
-   UInt_t          boardTriggerBit;
-   UInt_t          triggerWord;
-   UInt_t          nAdcChannels;
-   UInt_t          adcBoard[NUM_ADC_CHANNELS];   //[nAdcChannels]
-   UInt_t          adcChannel[NUM_ADC_CHANNELS];   //[nAdcChannels]
-   UInt_t          adcData[NUM_ADC_CHANNELS];   //[nAdcChannels]
-   UInt_t          nTdcChannels;
-   UInt_t          tdcBoard[NUM_TDC_CHANNELS];   //[nTdcChannels]
-   UInt_t          tdcChannel[NUM_TDC_CHANNELS];   //[nTdcChannels]
-   UInt_t          tdcData[NUM_TDC_CHANNELS];   //[nTdcChannels]
-   UInt_t          nDigiSamples;
-   UInt_t          digiGroup[NUM_DIGI_SAMPLES];   //[nDigiSamples]
-   UInt_t          digiChannel[NUM_DIGI_SAMPLES];   //[nDigiSamples]
-   UInt_t          digiSampleIndex[NUM_DIGI_SAMPLES];   //[nDigiSamples]
-   Float_t         digiSampleValue[NUM_DIGI_SAMPLES];   //[nDigiSamples]
-
-
-   // List of branches
-   TBranch        *b_evtNumber;   //!
-   TBranch        *b_evtTimeDist;   //!
-   TBranch        *b_evtTimeStart;   //!
-   TBranch        *b_evtTime;   //!
-   TBranch        *b_boardTriggerBit;   //!
-   TBranch        *b_triggerWord;   //!
-   TBranch        *b_nAdcChannels;   //!
-   TBranch        *b_adcBoard;   //!
-   TBranch        *b_adcChannel;   //!
-   TBranch        *b_adcData;   //!
-   TBranch        *b_nTdcChannels;   //!
-   TBranch        *b_tdcBoard;   //!
-   TBranch        *b_tdcChannel;   //!
-   TBranch        *b_tdcData;   //!
-   TBranch        *b_nDigiSamples;   //!
-   TBranch        *b_digiGroup;   //!
-   TBranch        *b_digiChannel;   //!
-   TBranch        *b_digiSampleIndex;   //!
-   TBranch        *b_digiSampleValue;   //!
-
-
+  TTree          *fChain;   //!pointer to the analyzed TTree or TChain
+  Int_t           fCurrent; //!current Tree number in a TChain
+  
+  // Declaration of leaf types
+  UInt_t          evtNumber;
+  UInt_t          evtTimeDist;
+  UInt_t          evtTimeStart;
+  UInt_t          evtTime;
+  UInt_t          boardTriggerBit;
+  UInt_t          triggerWord;
+  UInt_t          nAdcChannels;
+  UInt_t          adcBoard[NUM_ADC_CHANNELS];   //[nAdcChannels]
+  UInt_t          adcChannel[NUM_ADC_CHANNELS];   //[nAdcChannels]
+  UInt_t          adcData[NUM_ADC_CHANNELS];   //[nAdcChannels]
+  UInt_t          nTdcChannels;
+  UInt_t          tdcBoard[NUM_TDC_CHANNELS];   //[nTdcChannels]
+  UInt_t          tdcChannel[NUM_TDC_CHANNELS];   //[nTdcChannels]
+  UInt_t          tdcData[NUM_TDC_CHANNELS];   //[nTdcChannels]
+  UInt_t          nDigiSamples;
+  UInt_t          digiGroup[NUM_DIGI_SAMPLES];   //[nDigiSamples]
+  UInt_t          digiChannel[NUM_DIGI_SAMPLES];   //[nDigiSamples]
+  UInt_t          digiSampleIndex[NUM_DIGI_SAMPLES];   //[nDigiSamples]
+  Float_t         digiSampleValue[NUM_DIGI_SAMPLES];   //[nDigiSamples]
+  
+  
+  // List of branches
+  TBranch        *b_evtNumber;   //!
+  TBranch        *b_evtTimeDist;   //!
+  TBranch        *b_evtTimeStart;   //!
+  TBranch        *b_evtTime;   //!
+  TBranch        *b_boardTriggerBit;   //!
+  TBranch        *b_triggerWord;   //!
+  TBranch        *b_nAdcChannels;   //!
+  TBranch        *b_adcBoard;   //!
+  TBranch        *b_adcChannel;   //!
+  TBranch        *b_adcData;   //!
+  TBranch        *b_nTdcChannels;   //!
+  TBranch        *b_tdcBoard;   //!
+  TBranch        *b_tdcChannel;   //!
+  TBranch        *b_tdcData;   //!
+  TBranch        *b_nDigiSamples;   //!
+  TBranch        *b_digiGroup;   //!
+  TBranch        *b_digiChannel;   //!
+  TBranch        *b_digiSampleIndex;   //!
+  TBranch        *b_digiSampleValue;   //!
+   
+   
    iMCP_BTF_rawDataTree(TTree *tree=0);
    virtual ~iMCP_BTF_rawDataTree();
    virtual Int_t    Cut(Long64_t entry);
