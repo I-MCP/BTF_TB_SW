@@ -50,7 +50,8 @@ struct waveform_data
   float pedestal_rms; //from pre-samples;
   float max_amplitude; //max_value;
   float time_at_max; //emualated constant fraction data
-  float time_at_frac; //emualated constant fraction data
+  float time_at_frac30; //emualated constant fraction data
+  float time_at_frac50; //emualated constant fraction data
   float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
   float sampleTime[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
 
@@ -60,7 +61,8 @@ struct waveform_data
     pedestal_rms=-1;
     max_amplitude=-1;
     time_at_max=-1;
-    time_at_frac=-1;
+    time_at_frac30=-1;
+    time_at_frac50=-1;
     for (unsigned int i(0);i<DIGI_SAMPLES_TO_STORE;++i)
       {
 	samples[i]=-999;
@@ -139,7 +141,8 @@ void bookWaveform(TTree* tree, TString name, waveform_data& waveform)
   tree->Branch(name+"_pedestal",&waveform.pedestal,name+"_pedestal/F");
   tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
   tree->Branch(name+"_max_amplitude",&waveform.max_amplitude,name+"_max_amplitude/F");
-  tree->Branch(name+"_time_at_frac",&waveform.time_at_frac,name+"_time_at_frac/F");
+  tree->Branch(name+"_time_at_frac30",&waveform.time_at_frac30,name+"_time_at_frac30/F");
+  tree->Branch(name+"_time_at_frac50",&waveform.time_at_frac50,name+"_time_at_frac50/F");
   tree->Branch(name+"_time_at_max",&waveform.time_at_max,name+"_time_at_max/F");
   tree->Branch(name+"_samples",waveform.samples,name+Form("_samples[%d]/F",DIGI_SAMPLES_TO_STORE));
   tree->Branch(name+"_sampleTime",waveform.sampleTime,name+Form("_sampleTime[%d]/F",DIGI_SAMPLES_TO_STORE));
@@ -258,23 +261,30 @@ int main (int argc, char** argv)
 		}
 	      ++nLine;
 	    }
-	  
+
+	  if ( eventWaveform._samples.size()<1)
+	    {
+	      iSave=0;
+	      continue;
+	    }
+
 	  Waveform::baseline_informations wave_pedestal;
 	  Waveform::max_amplitude_informations wave_max;
 	  
-	  wave_pedestal=eventWaveform.baseline(5,25); 
+	  wave_pedestal=eventWaveform.baseline(1,10); 
 	  
-	  // eventWaveform.offset(wave_pedestal.pedestal);
+	  eventWaveform.offset(wave_pedestal.pedestal);
 	  eventWaveform.rescale(-1); //invert Buderk MCPs signal
 	  wave_max=eventWaveform.max_amplitude(26,eventWaveform._samples.size()-50,9); //find max amplitude between 50 and 500 samples
-	  float cft_20 = eventWaveform.time_at_frac(wave_max.time_at_max - 3.e-9, wave_max.time_at_max, 0.2,  wave_max,9);
+	  float cft_30 = eventWaveform.time_at_frac(wave_max.time_at_max - 3.e-9, wave_max.time_at_max, 0.3,  wave_max,9);
 	  float cft_50 = eventWaveform.time_at_frac(wave_max.time_at_max - 3.e-9, wave_max.time_at_max, 0.5,  wave_max,9);
 
 	  event._channelsData.channels_digi_data[ich].pedestal=wave_pedestal.pedestal*1.e3; //storing data in mV
 	  event._channelsData.channels_digi_data[ich].pedestal_rms=wave_pedestal.rms*1.3;
 	  event._channelsData.channels_digi_data[ich].max_amplitude=wave_max.max_amplitude*1.e3; 
 	  event._channelsData.channels_digi_data[ich].time_at_max=wave_max.time_at_max * 1.e9; //storing data in ns
-	  event._channelsData.channels_digi_data[ich].time_at_frac=cft_20*1.e9;
+	  event._channelsData.channels_digi_data[ich].time_at_frac30=cft_30*1.e9;
+	  event._channelsData.channels_digi_data[ich].time_at_frac50=cft_50*1.e9;
 	  
 	  //Filling interesting samples
 	  int s1,s2;

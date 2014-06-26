@@ -272,13 +272,13 @@ Waveform::baseline_informations Waveform::baseline(const int& x1, const int& x2)
 
   double mean=0;
   double rms=0;
-  
+
   for (unsigned int i(x1);i<=x2;++i)
     {
       mean+=_samples[i];
       rms+=_samples[i]*_samples[i];
     }
-  
+
   mean=mean/(double)(x2-x1+1);
   rms=TMath::Sqrt((x2-x1+1)/(x2-x1))*TMath::Sqrt( rms/(x2-x1+1) - mean*mean );
   return_value.pedestal = mean;

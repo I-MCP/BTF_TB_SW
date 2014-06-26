@@ -9,7 +9,11 @@
 #include "TLatex.h"
 #include "TROOT.h"
 
-struct fitSlices
+#include <iostream>
+
+#define MIN_FIT_INTEGRAL 20.
+
+struct fitGaussianSlices
 {
   std::vector<TH1F*> _histoSlices;
 
@@ -23,9 +27,9 @@ struct fitSlices
   std::vector<float> _par2err;
 };
 
-fitSlices fitProfile(TH2F* h)
+fitGaussianSlices fitProfile(TH2F* h)
 {
-  fitSlices returnObject;
+  fitGaussianSlices returnObject;
   
   for (int i(1);i<=h->GetNbinsX();++i)
     {
@@ -38,12 +42,12 @@ fitSlices fitProfile(TH2F* h)
 	}
 
       std::cout << "+++++ " << sliceHisto->GetName() << std::endl;
-      if (sliceHisto->Integral()>10.)
-	sliceHisto->Fit("gaus","R","",-1,1);
+      if (sliceHisto->Integral()>MIN_FIT_INTEGRAL)
+	sliceHisto->Fit("gaus","R","",-1.5,1.5);
       
 
       returnObject._histoSlices.push_back(sliceHisto);
-      if (sliceHisto->Integral()>10.)
+      if (sliceHisto->Integral()>MIN_FIT_INTEGRAL)
 	{
 	  returnObject._x.push_back(h->GetXaxis()->GetBinCenter(i));
 	  returnObject._chi2.push_back(sliceHisto->GetFunction("gaus")->GetChisquare());
@@ -58,18 +62,23 @@ fitSlices fitProfile(TH2F* h)
   return returnObject;
 }
 
-void fitTimeResVsAmplitude(const char* filename,const char* outputDir){
+void fitTimeResVsAmplitude(TH2F* histo, const char* filename, const char* tree, const char* outputDir,const char* plotVar, const char* selectionString, const char *suffix,const char* title){
 
   TFile *_file0 = TFile::Open(filename);
   //  TH2F* timeVsAmplitude=new TH2F("timeVsAmplitude","timeVsAmplitude",120,2,322,400,49.,53.);
-  TH2F* timeVsAmplitude=new TH2F("timeVsAmplitude","timeVsAmplitude",120,2,302,200,-2,2);
-  TTree* eventData=(TTree*)_file0->Get("eventData");
-
+  histo=new TH2F("timeVsAmplitude","timeVsAmplitude",120,2,302,200,-2,2);
+  TTree* eventData=(TTree*)_file0->Get(tree);
+  eventData->Print();
   //  eventData->Project(timeVsAmplitude->GetName(),"ch_1_time_at_frac30-51.2:ch_1_max_amplitude","(ch_1_time_at_max>50 &&  ch_1_time_at_max<53) && ch_1_max_amplitude>2. && !(ch_1_max_amplitude>14.5 && ch_1_max_amplitude<202)","");
   //  eventData->Project(timeVsAmplitude->GetName(),"ch_1_time_at_frac30-ch_0_time_at_frac30:(ch_1_max_amplitude*ch_0_max_amplitude)/TMath::Sqrt(ch_0_max_amplitude*ch_0_max_amplitude+ch_1_max_amplitude*ch_1_max_amplitude)","(ch_1_time_at_max>50 &&  ch_1_time_at_max<53) && ch_1_max_amplitude>2. && (ch_0_time_at_max>50 &&  ch_0_time_at_max<53) && ch_0_max_amplitude>2.","");
-  eventData->Project(timeVsAmplitude->GetName(),"ch_0_time_at_frac30-51.2:ch_0_max_amplitude","(ch_0_time_at_max>50 &&  ch_0_time_at_max<53) && ch_0_max_amplitude>2. && !(ch_0_max_amplitude>14.5 && ch_0_max_amplitude<202)","");
+  std::cout << "Plotting: " << plotVar << std::endl;
+  std::cout << "Selection: " << selectionString << std::endl;
+  //  std::cout << "Selection: " << selection << std::end;
 
-  fitSlices timeVsAmplitudeProfile=fitProfile(timeVsAmplitude);
+  eventData->Project(histo->GetName(),plotVar,selectionString);
+  std::cout << "======= " << histo->GetEntries() << std::endl;
+
+  fitGaussianSlices timeVsAmplitudeProfile=fitProfile(histo);
 
   double x[timeVsAmplitudeProfile._x.size()];
   double xErr[timeVsAmplitudeProfile._x.size()];
@@ -94,37 +103,90 @@ void fitTimeResVsAmplitude(const char* filename,const char* outputDir){
   text->SetTextAlign(12);
   text->SetTextSize(0.035);
 
-  gROOT->SetStyle("plain");
+  gROOT->SetStyle("Plain");
 
   gStyle->SetOptTitle(0);
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(111111);
-  TFile* f=TFile::Open(Form("%s/fitProfiles.root",outputDir),"RECREATE");
-  
-  TGraphErrors* gr=new TGraphErrors(timeVsAmplitudeProfile._x.size(),x,sigma,xErr,sigmaErr);
-  TCanvas *c=new TCanvas("c","c",1024,768);
-  gr->SetMarkerStyle(20);
-  gr->SetMarkerSize(1.1);
-  gr->GetXaxis()->SetTitle("Signal amplitude (mV)");
-  gr->GetYaxis()->SetTitle("#sigma_{t} (ns)");
-  gr->Draw("AP");
-
-
-  TF1* f1=new TF1("f1","TMath::Sqrt(([0]*[0])/(x*x)+[1]*[1])",1,400);
-  f1->SetParameter(0,0.8);
-  f1->SetParameter(1,0.01);
-  gr->Fit("f1");
-
-
-  text->DrawTextNDC(0.14,0.93,"MCP BINP Rome#1 -2.8 kV");  
-  text->DrawLatex(230.,0.25,"#sigma_{t} = #frac{p0}{A} #oplus p1");  
-
-  c->SaveAs(Form("%s/sigmaProfile.png",outputDir));
+  TFile* f=TFile::Open(Form("%s/fitProfiles_%s.root",outputDir,suffix),"RECREATE");
   f->cd();
-  for (int i(0);i<timeVsAmplitude->GetNbinsX();++i)
+
+  TCanvas *c=new TCanvas("out","out",1024,768);
+  {  
+    TH2F a("a","a",10,0.,320.,10,0.,0.25);
+    a.Draw();
+    TGraphErrors* gr=new TGraphErrors(timeVsAmplitudeProfile._x.size(),x,sigma,xErr,sigmaErr);
+    gr->SetMarkerStyle(20);
+    gr->SetMarkerSize(1.1);
+    gr->GetXaxis()->SetTitle("Signal amplitude (mV)");
+
+    gr->GetYaxis()->SetTitle("#sigma_{t} (ns)");
+    gr->Draw("PSAME");
+
+
+    TF1* f1=new TF1("f1","TMath::Sqrt(([0]*[0])/(x*x)+[1]*[1])",1,400);
+    f1->SetParameter(0,0.8);
+    f1->SetParameter(1,0.01);
+    gr->Fit("f1");
+
+//     gr->GetYaxis()->SetRangeUser(0.,0.25);    
+//     gr->GetXaxis()->SetRangeUser(0.,300.);    
+//     c->Update();
+    
+    text->DrawTextNDC(0.14,0.93,title);  
+    text->DrawLatex(230.,0.18,"#sigma_{t} = #frac{p0}{A} #oplus p1");  
+    gr->Write(Form("sigmaProfile_%s",suffix));
+    c->Write(Form("canvas_sigmaProfile_%s",suffix));
+    c->SaveAs(Form("%s/sigmaProfile_%s.png",outputDir,suffix));
+  }
+
+  {
+    TGraphErrors* gr=new TGraphErrors(timeVsAmplitudeProfile._x.size(),x,mean,xErr,meanErr);
+    gr->SetMarkerStyle(20);
+    gr->SetMarkerSize(1.1);
+    gr->GetXaxis()->SetTitle("Signal amplitude (mV)");
+    gr->GetYaxis()->SetTitle("Mean time (ns)");
+    gr->Draw("AP");
+    
+    
+    //   TF1* f1=new TF1("f1","TMath::Sqrt(([0]*[0])/(x*x)+[1]*[1])",1,400);
+    //   f1->SetParameter(0,0.8);
+    //   f1->SetParameter(1,0.01);
+    gr->Fit("pol2");
+    
+    text->DrawTextNDC(0.14,0.93,title);  
+    //   text->DrawLatex(230.,0.25,"#sigma_{t} = #frac{p0}{A} #oplus p1");  
+    gr->Write(Form("meanProfile_%s",suffix));
+    c->Write(Form("canvas_meanProfile_%s",suffix));
+    c->SaveAs(Form("%s/meanProfile_%s.png",outputDir,suffix));
+  }
+
+  {
+    TGraphErrors* gr=new TGraphErrors(timeVsAmplitudeProfile._x.size(),x,chi2,xErr,xErr);
+    gr->SetMarkerStyle(20);
+    gr->SetMarkerSize(1.1);
+    gr->GetXaxis()->SetTitle("Signal amplitude (mV)");
+    gr->GetYaxis()->SetTitle("#Chi^{2}");
+    gr->Draw("AP");
+    
+    
+    //   TF1* f1=new TF1("f1","TMath::Sqrt(([0]*[0])/(x*x)+[1]*[1])",1,400);
+    //   f1->SetParameter(0,0.8);
+    //   f1->SetParameter(1,0.01);
+    gr->Fit("pol2");
+  
+
+    text->DrawTextNDC(0.14,0.93,title);  
+    //   text->DrawLatex(230.,0.25,"#sigma_{t} = #frac{p0}{A} #oplus p1");  
+    gr->Write(Form("chi2Profile_%s",suffix));
+    c->Write(Form("canvas_chi2Profile_%s",suffix));
+    c->SaveAs(Form("%s/chi2Profile_%s.png",outputDir,suffix));
+  }
+
+  for (int i(0);i<histo->GetNbinsX();++i)
     if (timeVsAmplitudeProfile._histoSlices[i]->Integral()>0)
       timeVsAmplitudeProfile._histoSlices[i]->Write();
-
+  histo->Write();
   f->Write();
   f->Close();
 
