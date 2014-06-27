@@ -7,6 +7,8 @@
 
 #define DIGI_SAMPLES_TO_STORE 200
 
+#define BASELINE_DIGI_SAMPLES_TO_STORE 50
+
 #define SCINT_ADC_CHANNELS 2
 #define SCINT_DIGI_CHANNELS 2
 
@@ -45,9 +47,12 @@ namespace iMCP_BTF_simpleRecoTree_namespace
     float pedestal_rms; //from pre-samples;
     float max_amplitude; //max_value;
     float time_at_max; //emualated constant fraction data
-    float time_at_frac; //emualated constant fraction data
+    float time_at_frac30; //emualated constant fraction data
+    float time_at_frac50; //emualated constant fraction data
     float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
-    int sampleIndex[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+    float sampleTime[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+    float baseline_samples[BASELINE_DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+    float baseline_sampleTime[BASELINE_DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
 
     void clear()
     {
@@ -55,11 +60,17 @@ namespace iMCP_BTF_simpleRecoTree_namespace
       pedestal_rms=-1;
       max_amplitude=-1;
       time_at_max=-1;
-      time_at_frac=-1;
+      time_at_frac30=-1;
+      time_at_frac50=-1;
       for (unsigned int i(0);i<DIGI_SAMPLES_TO_STORE;++i)
 	{
 	  samples[i]=-999;
-	  sampleIndex[i]=-1;
+	  sampleTime[i]=-1;
+	}
+      for (unsigned int i(0);i<BASELINE_DIGI_SAMPLES_TO_STORE;++i)
+	{
+	  baseline_samples[i]=-999;
+	  baseline_sampleTime[i]=-1;
 	}
     };
   };

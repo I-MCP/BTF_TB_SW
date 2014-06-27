@@ -64,10 +64,13 @@ void iMCP_BTF_simpleRecoTree::bookWaveform(TString name, waveform_data& waveform
   tree->Branch(name+"_pedestal",&waveform.pedestal,name+"_pedestal/F");
   tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
   tree->Branch(name+"_max_amplitude",&waveform.max_amplitude,name+"_max_amplitude/F");
-  tree->Branch(name+"_time_at_frac",&waveform.time_at_frac,name+"_time_at_frac/F");
+  tree->Branch(name+"_time_at_frac30",&waveform.time_at_frac30,name+"_time_at_frac30/F");
+  tree->Branch(name+"_time_at_frac50",&waveform.time_at_frac50,name+"_time_at_frac50/F");
   tree->Branch(name+"_time_at_max",&waveform.time_at_max,name+"_time_at_max/F");
   tree->Branch(name+"_samples",waveform.samples,name+Form("_samples[%d]/F",DIGI_SAMPLES_TO_STORE));
-  tree->Branch(name+"_sampleIndex",waveform.sampleIndex,name+Form("_sampleIndex[%d]/I",DIGI_SAMPLES_TO_STORE));
+  tree->Branch(name+"_sampleTime",waveform.sampleTime,name+Form("_sampleTime[%d]/F",DIGI_SAMPLES_TO_STORE));
+  tree->Branch(name+"_baseline_samples",waveform.baseline_samples,name+Form("_baseline_samples[%d]/F",BASELINE_DIGI_SAMPLES_TO_STORE));
+  tree->Branch(name+"_baseline_sampleTime",waveform.baseline_sampleTime,name+Form("_baseline_sampleTime[%d]/F",BASELINE_DIGI_SAMPLES_TO_STORE));
 }
 
 void iMCP_BTF_simpleRecoTree::bookTdcData(TString name, tdc_data& tdc)
@@ -161,31 +164,31 @@ void iMCP_BTF_simpleRecoTree::Loop()
 
 	//This is MiB1
 	if ( digiChannel[i]==MCP_0_DIGITIZER_CHANNEL )
-	  mcp_waveforms[0].addSample(digiSampleValue[i]);
+	  mcp_waveforms[0].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 	//This is MiB2
 	if (digiChannel[i]==MCP_1_DIGITIZER_CHANNEL )
-	  mcp_waveforms[1].addSample(digiSampleValue[i]);
+	  mcp_waveforms[1].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 
 	//This is PLANACON
 	if (digiChannel[i]==MCP_2_DIGITIZER_CHANNEL )
-	  mcp_waveforms[4].addSample(digiSampleValue[i]);
+	  mcp_waveforms[4].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 	//This is MiB3
 	if (digiChannel[i]==MCP_3_DIGITIZER_CHANNEL )
-	  mcp_waveforms[2].addSample(digiSampleValue[i]);
+	  mcp_waveforms[2].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 	//This is RM
 	if (digiChannel[i]==MCP_4_DIGITIZER_CHANNEL )
-	  mcp_waveforms[3].addSample(digiSampleValue[i]);
+	  mcp_waveforms[3].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 
 	if (digiChannel[i] == SCINT_FRONT_DIGITIZER_CHANNEL )
-	  scint_waveforms[0].addSample(digiSampleValue[i]);
+	  scint_waveforms[0].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
 	if (digiChannel[i] == SCINT_BACK_DIGITIZER_CHANNEL)
-	  scint_waveforms[1].addSample(digiSampleValue[i]);
+	  scint_waveforms[1].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 
       } //end loop over digis
 
@@ -198,20 +201,28 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	mcp_waveforms[i].offset(mcp_pedestals[i].pedestal);
 	if (i!=4)
 	  mcp_waveforms[i].rescale(-1); //invert Buderk MCPs signal
-	mcp_max[i]=mcp_waveforms[i].max_amplitude(150,350); //find max amplitude between 50 and 500 samples
+	mcp_max[i]=mcp_waveforms[i].max_amplitude(150,350,5); //find max amplitude between 50 and 500 samples
 
 	//Fill tree Data
 	treeData._mcpData.mcp_digi_data[i].pedestal=mcp_pedestals[i].pedestal;
 	treeData._mcpData.mcp_digi_data[i].pedestal_rms=mcp_pedestals[i].rms;
 	treeData._mcpData.mcp_digi_data[i].max_amplitude=mcp_max[i].max_amplitude;
-	treeData._mcpData.mcp_digi_data[i].time_at_max=mcp_max[i].time_at_max;
-	treeData._mcpData.mcp_digi_data[i].time_at_frac=-1; //not yet filled
+	treeData._mcpData.mcp_digi_data[i].time_at_max=mcp_max[i].time_at_max*1.e9;
+	treeData._mcpData.mcp_digi_data[i].time_at_frac30=mcp_waveforms[i].time_at_frac(mcp_max[i].time_at_max - 3.e-9, mcp_max[i].time_at_max, 0.3,  mcp_max[i],7)*1.e9; 
+	treeData._mcpData.mcp_digi_data[i].time_at_frac50=mcp_waveforms[i].time_at_frac(mcp_max[i].time_at_max - 3.e-9, mcp_max[i].time_at_max, 0.5,  mcp_max[i],7)*1.e9; 
+
+	//Fill baseline samples
+	for (unsigned int isample(0);isample<BASELINE_DIGI_SAMPLES_TO_STORE;++isample)
+	  {
+	    treeData._mcpData.mcp_digi_data[i].baseline_samples[isample]=mcp_waveforms[i]._samples[isample];
+	    treeData._mcpData.mcp_digi_data[i].baseline_sampleTime[isample]=mcp_waveforms[i]._times[isample]*1.e9;
+	  }
 
 	//Filling interesting samples
 	for (unsigned int isample(0);isample<DIGI_SAMPLES_TO_STORE;++isample)
 	  {
 	    treeData._mcpData.mcp_digi_data[i].samples[isample]=mcp_waveforms[i]._samples[150+isample];
-	    treeData._mcpData.mcp_digi_data[i].sampleIndex[isample]=150+isample;
+	    treeData._mcpData.mcp_digi_data[i].sampleTime[isample]=mcp_waveforms[i]._times[150+isample]*1.e9;
 	  }
       }
 
@@ -227,8 +238,16 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	treeData._scintData.scint_digi_data[i].pedestal=scint_pedestals[i].pedestal;
 	treeData._scintData.scint_digi_data[i].pedestal_rms=scint_pedestals[i].rms;
 	treeData._scintData.scint_digi_data[i].max_amplitude=scint_max[i].max_amplitude;
-	treeData._scintData.scint_digi_data[i].time_at_max=scint_max[i].time_at_max;
-	treeData._scintData.scint_digi_data[i].time_at_frac=-1; //not yet filled
+	treeData._scintData.scint_digi_data[i].time_at_max=scint_max[i].time_at_max*1.e9;
+	treeData._scintData.scint_digi_data[i].time_at_frac30=scint_waveforms[i].time_at_frac(scint_max[i].time_at_max - 30.e-9, scint_max[i].time_at_max, 0.3,  scint_max[i],7)*1.e9; 
+	treeData._scintData.scint_digi_data[i].time_at_frac50=scint_waveforms[i].time_at_frac(scint_max[i].time_at_max - 30.e-9, scint_max[i].time_at_max, 0.5,  scint_max[i],7)*1.e9; 
+
+	//Fill baseline samples
+	for (unsigned int isample(0);isample<BASELINE_DIGI_SAMPLES_TO_STORE;++isample)
+	  {
+	    treeData._scintData.scint_digi_data[i].baseline_samples[isample]=scint_waveforms[i]._samples[isample];
+	    treeData._scintData.scint_digi_data[i].baseline_sampleTime[isample]=scint_waveforms[i]._times[isample]*1.e9;
+	  }
 
 	//Filling interesting samples
 	for (unsigned int isample(0);isample<DIGI_SAMPLES_TO_STORE;++isample)
@@ -236,12 +255,12 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	    if (i==0)
 	      {
 		treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[620+isample];
-		treeData._scintData.scint_digi_data[i].sampleIndex[isample]=620+isample;
+		treeData._scintData.scint_digi_data[i].sampleTime[isample]=scint_waveforms[i]._times[620+isample]*1.e9;
 	      }
 	    else if (i==1)
 	      {
 		treeData._scintData.scint_digi_data[i].samples[isample]=scint_waveforms[i]._samples[710+isample];
-		treeData._scintData.scint_digi_data[i].sampleIndex[isample]=710+isample;
+		treeData._scintData.scint_digi_data[i].sampleTime[isample]=scint_waveforms[i]._times[710+isample]*1.e9;
 	      }
 	  }
       }
