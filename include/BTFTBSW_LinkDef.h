@@ -3,6 +3,7 @@
 #pragma link off all classes;
 #pragma link off all functions;
 #pragma link C++ nestedclasses;
+#pragma link C++ class iMCP_BTF_checkDRS4Calibration+;
 #pragma link C++ class iMCP_BTF_simpleRecoTree+;
 #pragma link C++ class iMCP_BTF_simpleEffAnalysis+;
 #pragma link C++ class iMCP_BTF_simpleRecoTree_format+;
