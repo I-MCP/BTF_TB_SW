@@ -102,6 +102,7 @@ float Waveform::time_at_frac(const float& t1, const float& t2, const float& frac
   return time_at_frac(tmin,tmax,frac,maxInfos,SampleToInterpolate);
 }
 
+
 //Get the time at a given fraction of the amplitude for times between x1 and x2 
 float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate) const
 {
@@ -206,6 +207,87 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 
 };
 
+//Get the crossing time of the amplitude at a given threshold for times between t1 and t2 
+std::vector<float> Waveform::time_at_threshold(const float& t1, const float& t2, const float& threshold, int SampleToInterpolate) const 
+{
+  //std::cout << "_____ " << t1 << "," << t2 << std::endl;
+  int tmin=0;
+  int tmax=0;
+  for (unsigned int i(0);i<_times.size();++i)
+    {
+      //      std::cout << i << "," << _times[i] << std::endl;
+      if (_times[i]<t1)
+	tmin=i;
+      if (_times[i]<t2)
+	tmax=i;
+    }
+
+  return time_at_threshold(tmin,tmax,threshold,SampleToInterpolate);
+}
+
+//Get the crossing time of the amplitude at a given threshold for times between t1 and t2 
+std::vector<float> Waveform::time_at_threshold(const int& x1, const int& x2, const float& threshold, int SampleToInterpolate) const 
+{
+  int direction= 1 - 2*( _samples[max(x1,0)]<threshold ); //=-1 if first sample is below threshold, =1 if above
+  
+  std::vector<int> cfSample;
+  
+  for(int iSample=max(x1,0); iSample< min( (int) _samples.size() , x2); ++iSample)
+    {
+      if( (direction==-1 && (_samples[iSample] > threshold ) ) 
+	  || (direction==1 && (_samples[iSample] < threshold ) ) ) 
+	{
+	  cfSample.push_back(iSample);
+	  direction*=-1;
+	}
+    }
+
+  std::vector<float> crossingTimes;
+
+  for(int icross=0;icross<cfSample.size();++icross)
+    {
+      double x[SampleToInterpolate];
+      double y[SampleToInterpolate];
+      int nSamples=0;
+      for (unsigned int i(0);i<SampleToInterpolate;++i)
+	{
+	  if ( (cfSample[icross]-(SampleToInterpolate-1)/2+i)>=max(x1,0) && (cfSample[icross]-(SampleToInterpolate-1)/2+i)<=min(x2,(int)_samples.size()))
+	    {
+	      //	      x[i]=cfSample[icross]-(SampleToInterpolate-1)/2+i;
+	      x[i]=_times[cfSample[icross]-(SampleToInterpolate-1)/2+i]*1e9;
+	      y[i]=_samples[cfSample[icross]-(SampleToInterpolate-1)/2+i]-threshold;
+	      //std::cout <<  cfSample[icross] << "," << cfSample[icross]-(SampleToInterpolate-1)/2+i << "," << x[i] << "," << y[i] << std::endl;
+      	      ++nSamples;
+	    }
+	  else
+	    {
+	      if (WARNING_ERROR)
+		std::cout << "WARNING::Waveform::max_amplitude::maximum found too close to gate edges. Increase gate width" << std::endl;
+	    }
+	}
+
+      if (nSamples>3)
+	{
+	  //Now fit with parabolic function around maximum value
+	  TGraph* graph=new TGraph(nSamples,x,y);
+	  graph->Fit("pol1","Q0+");
+
+	  //FIXME Add a check on the FIT status
+	  double *par=graph->GetFunction("pol1")->GetParameters();
+
+	  crossingTimes.push_back( -(par[0]/par[1])/1.e9 );
+	  delete graph;
+	}
+      else
+	{
+	  if (WARNING_ERROR)
+	    std::cout << "WARNING::Waveform::max_amplitude::not enough samples to fit fot maximum. Returning unfitted position" << std::endl;
+	  crossingTimes.push_back( _times[cfSample[icross]] );
+	}
+      
+    }
+  return crossingTimes;
+}
 
 void Waveform::find_interesting_samples(int nSamples, const max_amplitude_informations& maxInfos, float riseTime, float fallTime, int& x1,int &x2)
 {
