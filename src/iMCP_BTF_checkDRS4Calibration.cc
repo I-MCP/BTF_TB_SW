@@ -2,6 +2,7 @@
 #include "Waveform.h"
 
 #include "TH1F.h"
+#include "TProfile.h"
 
 #include <iostream>
 
@@ -49,7 +50,10 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	  writableObjects[name]=(TObject*) (new TH1F(name,name,4096,-0.5,4095.5));
 	}
 
-      for(int is=0;is<MAX_THRESHOLDS_CROSSING-1;++is)
+      name=Form("wave_%d_profile",interestingChannels[i]);
+      writableObjects[name]=(TObject*) (new TProfile(name,name,1024,-0.5,1023.5,"s"));
+
+      for(int is=0;is<MAX_THRESHOLDS_CROSSING;++is)
 	{
 	  name=Form("wave_%d_thr_0_timeCross_%d",interestingChannels[i],is);
 	  writableObjects[name]=(TObject*) (new TH1F(name,name,10000,0,1024));
@@ -57,7 +61,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	  writableObjects[name]=(TObject*) (new TH1F(name,name,10000,0,1024));
 	}
       for(int is=0;is<MAX_THRESHOLDS_CROSSING-1;++is)
-	for(int is1=is;is1<MAX_THRESHOLDS_CROSSING;++is1)
+	for(int is1=is+1;is1<MAX_THRESHOLDS_CROSSING;++is1)
 	  {
 	    name=Form("wave_%d_thr_0_timeCross_%d_%d",interestingChannels[i],is,is1);
 	    writableObjects[name]=(TObject*) (new TH1F(name,name,50000,0,500));
@@ -71,6 +75,10 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
       {
 	name=Form("waveDifference_%d_%d_allSamples",interestingChannels[i],interestingChannels[j]);
 	writableObjects[name]=(TObject*) (new TH1F(name,name,10000,-200,200));
+
+	name=Form("waveDifference_%d_%d_profile",interestingChannels[i],interestingChannels[j]);
+	writableObjects[name]=(TObject*) (new TProfile(name,name,1024,-0.5,1023.5,"s"));
+
 	for(int is=0;is<MAX_SAMPLES_SIZE;++is)
 	  {
 	    name=Form("waveDifference_%d_%d_sample_%d",interestingChannels[i],interestingChannels[j],is);
@@ -150,7 +158,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
  	  std::cout << "WARNING DIGI channel is unknown!" << std::endl;
 
  	//This is MiB1
- 	if ( chInterest[digiChannel[i]]>-1 )
+ 	if ( chInterest[digiChannel[i]]>-1 &&  chInterest[digiChannel[i]]<interestingChannels.size() )
  	  waveforms[chInterest[digiChannel[i]]].addTimeAndSample(digiSampleIndex[i]*0.2e-9,digiSampleValue[i]);
 	
        } //end loop over digis
@@ -162,39 +170,44 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	   {
 	     name=Form("wave_%d_allSamples",interestingChannels[i]);
 	     ((TH1F*) writableObjects[name])->Fill(waveforms[i]._samples[j]);
+	     name=Form("wave_%d_profile",interestingChannels[i]);
+	     ((TProfile*) writableObjects[name])->Fill(j,waveforms[i]._samples[j]);
 	     name=Form("wave_%d_sample_%d",interestingChannels[i],j);
 	     ((TH1F*) writableObjects[name])->Fill(waveforms[i]._samples[j]);
 	   }
 	 
 	 std::vector<float> crossings_thr_0=waveforms[i].time_at_threshold(0,1000,THR_0_VALUE);
 	 std::vector<float> crossings_thr_1=waveforms[i].time_at_threshold(0,1000,THR_1_VALUE);
-	 
-	 for(int is=0;is<crossings_thr_0.size();++is)
+
+	 for(int is=0;is<std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_0.size());++is)
 	   {
 	     name=Form("wave_%d_thr_0_timeCross_%d",interestingChannels[i],is);
 	     ((TH1F*) writableObjects[name])->Fill((crossings_thr_0[is])*1.e9);
 	   }
-	 for(int is=0;is<crossings_thr_1.size();++is)
+
+	 for(int is=0;is<std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_1.size());++is)
 	   {
 	     name=Form("wave_%d_thr_1_timeCross_%d",interestingChannels[i],is);
 	     ((TH1F*) writableObjects[name])->Fill(crossings_thr_1[is]*1.e9);
 	   }
 
-	 for(int is=0;is<crossings_thr_0.size()-1;++is)
-	   for(int is1=is+1;is1<crossings_thr_0.size();++is1)
+	 for(int is=0;is< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_0.size())-1;++is)
+	   for(int is1=is+1;is1< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_0.size());++is1)
 	     {
 	       name=Form("wave_%d_thr_0_timeCross_%d_%d",interestingChannels[i],is,is1);
 	       ((TH1F*)writableObjects[name])->Fill((crossings_thr_0[is1]-crossings_thr_0[is])*1.e9);
 	     }
 
-	 for(int is=0;is<crossings_thr_1.size()-1;++is)
-	   for(int is1=is+1;is1<crossings_thr_1.size();++is1)
+	 for(int is=0;is< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_1.size())-1;++is)
+	   for(int is1=is+1;is1< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_1.size());++is1)
 	     {
 	       name=Form("wave_%d_thr_1_timeCross_%d_%d",interestingChannels[i],is,is1);
 	       ((TH1F*)writableObjects[name])->Fill((crossings_thr_1[is1]-crossings_thr_1[is])*1.e9);
 	     }
        }
      
+
+
      if ( interestingChannels.size()>1 )
        {
 	 //Build relative difference waveforms
@@ -207,14 +220,20 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 		 {
 		   assert(waveforms[i]._times[is] == waveforms[j]._times[is]);
 		   difference.addTimeAndSample(waveforms[i]._times[is],waveforms[i]._samples[is]-waveforms[j]._samples[is]);
-		   name=Form("waveDifference_%d_%d_allSamples",interestingChannels[i],interestingChannels[j]);
-		   ((TH1F*) writableObjects[name])->Fill(difference._samples[is]);
+		   name=Form("waveDifference_%d_%d_profile",interestingChannels[i],interestingChannels[j]);
+		   ((TProfile*) writableObjects[name])->Fill(is,difference._samples[is]);
+		   if (is<990) //last samples from DRS4 are unusable...
+		     {
+		       name=Form("waveDifference_%d_%d_allSamples",interestingChannels[i],interestingChannels[j]);
+		       ((TH1F*) writableObjects[name])->Fill(difference._samples[is]);
+		     }
 		   name=Form("waveDifference_%d_%d_sample_%d",interestingChannels[i],interestingChannels[j],is);
 		   ((TH1F*) writableObjects[name])->Fill(difference._samples[is]);
 		 }
 	     }
        }
   } //end loop over entries
+  
   
   //   tree->Write();
   //Writing out all objects
