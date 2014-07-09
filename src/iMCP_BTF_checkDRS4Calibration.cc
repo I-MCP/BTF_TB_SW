@@ -100,6 +100,8 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
   TH1F* waveAlignDifference_allSamples[interestingChannels.size()][interestingChannels.size()];
   TProfile* waveAlignDifference_profile[interestingChannels.size()][interestingChannels.size()];
   TH1F* waveAlignDifference_sample[interestingChannels.size()][interestingChannels.size()][1024];
+  TH1F* waveAlignDifference_thr_0_timeCrossDiffference[interestingChannels.size()][interestingChannels.size()][MAX_THRESHOLDS_CROSSING];
+  TH1F* waveAlignDifference_thr_1_timeCrossDiffference[interestingChannels.size()][interestingChannels.size()][MAX_THRESHOLDS_CROSSING];
 
 
   for (int i=0;i<interestingChannels.size()-1;++i)
@@ -134,7 +136,19 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	    waveAlignDifference_sample[i][j][is]=new TH1F(name,name,10000,-200,200);
 	    writableObjects[name]=(TObject*) (waveAlignDifference_sample[i][j][is]);
 	  }
+
+	for(int is=0;is<MAX_THRESHOLDS_CROSSING;++is)
+	  {
+	    name=Form("waveAlignDifference_%d_%d_thr_0_timeCrossDifference_%d",interestingChannels[i],interestingChannels[j],is);
+	    waveAlignDifference_thr_0_timeCrossDiffference[i][j][is]=new TH1F(name,name,4000,-1,1);
+	    writableObjects[name]=(TObject*) (waveAlignDifference_thr_0_timeCrossDiffference[i][j][is]);
+
+	    name=Form("waveAlignDifference_%d_%d_thr_1_timeCrossDifference_%d",interestingChannels[i],interestingChannels[j],is);
+	    waveAlignDifference_thr_1_timeCrossDiffference[i][j][is]=new TH1F(name,name,4000,-1,1);
+	    writableObjects[name]=(TObject*) (waveAlignDifference_thr_1_timeCrossDiffference[i][j][is]);
+	}
       }
+
   
   
   Long64_t nentries = fChain->GetEntriesFast();
@@ -358,24 +372,37 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	   waveforms[chInterest[digiChannel[i]]].addTimeAndSample( ( digiSampleIndex[i] - alignPar_deltaT[chInterest[digiChannel[i]]]) * 0.2e-9, digiSampleValue[i]+alignPar_deltaV[chInterest[digiChannel[i]]]);
        }
    //end loop over digis
-    
+
+    std::vector<float> crossings_thr_0_ref=waveforms[0].time_at_threshold(0,1000,THR_0_VALUE);
+    std::vector<float> crossings_thr_1_ref=waveforms[0].time_at_threshold(0,1000,THR_1_VALUE);    
+
     for (int j=1;j<interestingChannels.size();++j)
       {
 	waveforms[j].interpolate();
+
+	std::vector<float> crossings_thr_0=waveforms[j].time_at_threshold(0,1000,THR_0_VALUE);
+	std::vector<float> crossings_thr_1=waveforms[j].time_at_threshold(0,1000,THR_1_VALUE);    
 
 	Waveform difference;
 	assert(waveforms[0]._samples.size() == waveforms[j]._samples.size());
 	for (int is=0;is<waveforms[0]._samples.size();++is)
 	  {
- 	    difference.addTimeAndSample( waveforms[0]._times[is], ( waveforms[0]._samples[is] - waveforms[j]._interpolator->Eval(waveforms[0]._times[is]) ) );
-
- 	    waveAlignDifference_profile[0][j]->Fill(is,difference._samples[is]);
-	    
-	    waveAlignDifference_allSamples[0][j]->Fill(difference._samples[is]);
-
-	    waveAlignDifference_sample[0][j][is]->Fill(difference._samples[is]);
+	    difference.addTimeAndSample( waveforms[0]._times[is], ( waveforms[0]._samples[is] - waveforms[j]._interpolator->Eval(waveforms[0]._times[is]) ) );
+	    if (is > 10 && is <990)
+	      {
+		waveAlignDifference_profile[0][j]->Fill(is,difference._samples[is]);
+		waveAlignDifference_allSamples[0][j]->Fill(difference._samples[is]);
+		waveAlignDifference_sample[0][j][is]->Fill(difference._samples[is]);
+	      }
 	    
  	  }
+
+	for (int is=0;is<std::min(crossings_thr_0.size(),crossings_thr_0_ref.size());++is)
+	  waveAlignDifference_thr_0_timeCrossDiffference[0][j][is]->Fill( (crossings_thr_0_ref[is]- crossings_thr_0[is]) * 1.e9 );
+
+	for (int is=0;is<std::min(crossings_thr_1.size(),crossings_thr_1_ref.size());++is)
+	  waveAlignDifference_thr_1_timeCrossDiffference[0][j][is]->Fill( (crossings_thr_1_ref[is]- crossings_thr_1[is] ) * 1.e9 );
+
       }
   }
 
