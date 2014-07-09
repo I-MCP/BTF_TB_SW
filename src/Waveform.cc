@@ -225,6 +225,7 @@ std::vector<float> Waveform::time_at_threshold(const float& t1, const float& t2,
   return time_at_threshold(tmin,tmax,threshold,SampleToInterpolate);
 }
 
+
 //Get the crossing time of the amplitude at a given threshold for times between t1 and t2 
 std::vector<float> Waveform::time_at_threshold(const int& x1, const int& x2, const float& threshold, int SampleToInterpolate) const 
 {
@@ -248,15 +249,23 @@ std::vector<float> Waveform::time_at_threshold(const int& x1, const int& x2, con
     {
       double x[SampleToInterpolate];
       double y[SampleToInterpolate];
+      double syy=0,sxy=0,sxx=0,sx=0,sy=0;
+
       int nSamples=0;
       for (unsigned int i(0);i<SampleToInterpolate;++i)
 	{
+
 	  if ( (cfSample[icross]-(SampleToInterpolate-1)/2+i)>=max(x1,0) && (cfSample[icross]-(SampleToInterpolate-1)/2+i)<=min(x2,(int)_samples.size()))
 	    {
 	      //	      x[i]=cfSample[icross]-(SampleToInterpolate-1)/2+i;
 	      x[i]=_times[cfSample[icross]-(SampleToInterpolate-1)/2+i]*1e9;
 	      y[i]=_samples[cfSample[icross]-(SampleToInterpolate-1)/2+i]-threshold;
 	      //std::cout <<  cfSample[icross] << "," << cfSample[icross]-(SampleToInterpolate-1)/2+i << "," << x[i] << "," << y[i] << std::endl;
+	      syy+=y[i]*y[i];
+	      sxy+=x[i]*y[i];
+	      sxx+=x[i]*x[i];
+	      sy+=y[i];
+	      sx+=x[i];
       	      ++nSamples;
 	    }
 	  else
@@ -266,17 +275,21 @@ std::vector<float> Waveform::time_at_threshold(const int& x1, const int& x2, con
 	    }
 	}
 
-      if (nSamples>3)
+      if (nSamples>1)
 	{
-	  //Now fit with parabolic function around maximum value
-	  TGraph* graph=new TGraph(nSamples,x,y);
-	  graph->Fit("pol1","Q0+");
+// 	  //Now fit with parabolic function around maximum value
+// 	  TGraph* graph=new TGraph(nSamples,x,y);
+// 	  graph->Fit("pol1","Q0+");
 
-	  //FIXME Add a check on the FIT status
-	  double *par=graph->GetFunction("pol1")->GetParameters();
+// 	  //FIXME Add a check on the FIT status
+// 	  double *par=graph->GetFunction("pol1")->GetParameters();
 
-	  crossingTimes.push_back( -(par[0]/par[1])/1.e9 );
-	  delete graph;
+// 	  crossingTimes.push_back( -(par[0]/par[1])/1.e9 );
+// 	  delete graph;
+//        //Use the regression formula instead of the fit
+	  double b = (nSamples*sxy-sx*sy)/(double) (nSamples*sxx - sx*sx);
+	  double a = (sy - b*sx)/(double) nSamples;
+	  crossingTimes.push_back( -(a/b)/1.e9 );
 	}
       else
 	{

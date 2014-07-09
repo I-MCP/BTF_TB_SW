@@ -5,12 +5,16 @@
  
 #include <vector> 
 #include <algorithm> 
+#include <iostream> 
+
+#include "Math/Interpolator.h"
 
 class Waveform
 {
  public:
-  std::vector<float> _samples;
-  std::vector<float> _times;
+  std::vector<double> _samples;
+  std::vector<double> _times;
+  ROOT::Math::Interpolator* _interpolator=0;
   
   struct max_amplitude_informations
   {
@@ -28,8 +32,9 @@ class Waveform
 
   Waveform()
     {
+      _interpolator=0;
     };
-
+  
   //constructor from float array
   Waveform(int nSamples, float* times, float* samples)
     {
@@ -40,6 +45,7 @@ class Waveform
 	  _samples[i]=samples[i];
 	  _times[i]=times[i];
 	}
+      _interpolator=0;
     };
 
   //constructor from std::vector<float>
@@ -49,6 +55,7 @@ class Waveform
       _times.resize(samples.size());
       std::copy(samples.begin(), samples.end(), _samples.begin());
       std::copy(times.begin(), times.end(), _times.begin());
+      _interpolator=0;
     };
 
   ~Waveform()
@@ -69,6 +76,15 @@ class Waveform
   {
     _samples.push_back(sample);
     _times.push_back(time);
+  }
+
+  void interpolate()
+  {
+    if  (_interpolator)
+      return;
+
+    _interpolator=new ROOT::Math::Interpolator(_samples.size(), ROOT::Math::Interpolation::kLINEAR);
+    _interpolator->SetData(_times,_samples);
   }
 
   //open a window of nSamples centered keeping into account where is the maximum and some characteristics of the shape
@@ -104,6 +120,9 @@ class Waveform
   void clear()
   {
     _samples.clear();
+    _times.clear();
+/*     if (_interpolator)  */
+/*       delete _interpolator;  */
   };
 
   //substract a fixed value from the samples

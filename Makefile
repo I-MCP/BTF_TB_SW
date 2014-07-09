@@ -1,6 +1,6 @@
 # $Id: Makefile,v 1.8 2010/08/25 08:36:35 rahatlou Exp $
-ROOTLIBS      = $(shell $(ROOTSYS)/bin/root-config --libs)
-ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs)
+ROOTLIBS      = $(shell $(ROOTSYS)/bin/root-config --libs) -lMathMore
+ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs) -lMathMore
 
 BOOSTINC      = $(shell cd $(CMSSW_BASE); scram tool tag boost INCLUDE)
 BOOSTLIB      = $(shell cd $(CMSSW_BASE); scram tool tag boost LIBDIR)
