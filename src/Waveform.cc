@@ -124,6 +124,7 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
     {
       double x[SampleToInterpolate];
       double y[SampleToInterpolate];
+      double syy=0,sxy=0,sxx=0,sx=0,sy=0;
       int nSamples=0;
       for (unsigned int i(0);i<SampleToInterpolate;++i)
 	{
@@ -133,8 +134,12 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 	      x[i]=_times[cfSample-(SampleToInterpolate-1)/2+i]*1e9;
 	      y[i]=_samples[cfSample-(SampleToInterpolate-1)/2+i]-maxInfos.max_amplitude*frac;
 	      //std::cout <<  cfSample << "," << cfSample-(SampleToInterpolate-1)/2+i << "," << x[i] << "," << y[i] << std::endl;
-      
-	      ++nSamples;
+	      syy+=y[i]*y[i];
+	      sxy+=x[i]*y[i];
+	      sxx+=x[i]*x[i];
+	      sy+=y[i];
+	      sx+=x[i];
+      	      ++nSamples;
 	    }
 	  else
 	    {
@@ -143,17 +148,21 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 	    }
 	}
 
-      if (nSamples>3)
+      if (nSamples>1)
 	{
-	  //Now fit with parabolic function around maximum value
-	  TGraph* graph=new TGraph(nSamples,x,y);
-	  graph->Fit("pol1","Q0+");
+// 	  //Now fit with parabolic function around maximum value
+// 	  TGraph* graph=new TGraph(nSamples,x,y);
+// 	  graph->Fit("pol1","Q0+");
 
-	  //FIXME Add a check on the FIT status
-	  double *par=graph->GetFunction("pol1")->GetParameters();
+// 	  //FIXME Add a check on the FIT status
+// 	  double *par=graph->GetFunction("pol1")->GetParameters();
 
-	  return -(par[0]/par[1])/1.e9;
-	  delete graph;
+	  double b = (nSamples*sxy-sx*sy)/(double) (nSamples*sxx - sx*sx);
+	  double a = (sy - b*sx)/(double) nSamples;
+	  return -(a/b)/1.e9;
+	  
+// 	  return -(par[0]/par[1])/1.e9;
+// 	  delete graph;
 	}
       else
 	{
@@ -163,48 +172,6 @@ float Waveform::time_at_frac(const int& x1, const int& x2, const float& frac, co
 	}
 
     }
-   
-//   float xx= 0.;
-//   float xy= 0.;
-//   float Sx = 0.;
-//   float Sy = 0.;
-//   float Sxx = 0.;
-//   float Sxy = 0.;
-//   float Chi2 = 0.;
-//   int minSample=x1;
-//   int cfSample=x1; // first sample over AmpMax*CF 
-//   float minValue=0;
-  
-
-
-//   for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
-//     {
-//       if(cfSample+n<0) continue;
-//       double x=_times[cfSample+n]*1.e9;
-//       xx = (x)*(x);
-//       xy = (x)*(_samples[cfSample+n]);
-//       Sx = Sx + (x);
-//       Sy = Sy + _samples[cfSample+n];
-//       Sxx = Sxx + xx;
-//       Sxy = Sxy + xy;
-//     }
-
-//   float Delta = SampleToInterpolate*Sxx - Sx*Sx;
-//   float A = (Sxx*Sy - Sx*Sxy) / Delta;
-//   float B = (SampleToInterpolate*Sxy - Sx*Sy) / Delta;
-  
-//   float sigma2 = pow(1./sqrt(12)*B,2);
-  
-//   for(int n=-(SampleToInterpolate-1)/2; n<=(SampleToInterpolate-1)/2; n++)
-//     {
-//       if(cfSample+n<0) continue;
-//       Chi2 = Chi2 + pow(_samples[cfSample+n] - A - B*((_times[cfSample+n]*1.e9)),2)/sigma2;
-//     } 
-//   // A+Bx = frac * amp
-//   float interpolation = (_samples[minSample] * frac - A) / B;
-//   return interpolation;				
-
-
 };
 
 //Get the crossing time of the amplitude at a given threshold for times between t1 and t2 
@@ -226,7 +193,7 @@ std::vector<float> Waveform::time_at_threshold(const float& t1, const float& t2,
 }
 
 
-//Get the crossing time of the amplitude at a given threshold for times between t1 and t2 
+//Get all the crossing times of the waveform at a given threshold for samples between x1 and x2 
 std::vector<float> Waveform::time_at_threshold(const int& x1, const int& x2, const float& threshold, int SampleToInterpolate) const 
 {
   int direction= 1 - 2*( _samples[max(x1,0)]<threshold ); //=-1 if first sample is below threshold, =1 if above
