@@ -21,6 +21,8 @@
 #define MAX_THRESHOLDS 10
 #define MAX_THRESHOLDS_CROSSING 10
 #define MAX_CHANNELS 10
+#define NSAMPLES_INTERPOLATION 9
+
 /* #define THR_0_VALUE 2200 */
 /* #define THR_1_VALUE 2700 */
 
@@ -39,12 +41,10 @@ class iMCP_BTF_checkDRS4Calibration : public iMCP_BTF_rawDataTree
     
     void clear()
     {
-/*       for (int i=0;i<MAX_CHANNELS;++i) */
-/* 	for (int j=0;i<MAX_THRESHOLDS_CROSSING;++j) */
-/* 	  { */
-/* 	    crossings_thr_0[i][j]=-999.; */
-/* 	    crossings_thr_1[i][j]=-999.; */
-/* 	  } */
+      for (int it=0;it<MAX_THRESHOLDS;++it)
+	for (int i=0;i<MAX_CHANNELS;++i)
+	  for (int j=0;j<MAX_THRESHOLDS_CROSSING;++j)
+	      crossings[it][i][j]=-999.;
     }
   };
 

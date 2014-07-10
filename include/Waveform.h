@@ -60,6 +60,8 @@ class Waveform
 
   ~Waveform()
     {
+      if (_interpolator)
+	delete _interpolator;
     };
 
   //add samples
@@ -83,7 +85,7 @@ class Waveform
     if  (_interpolator)
       return;
 
-    _interpolator=new ROOT::Math::Interpolator(_samples.size(), ROOT::Math::Interpolation::kLINEAR);
+    _interpolator=new ROOT::Math::Interpolator(_samples.size(), ROOT::Math::Interpolation::kCSPLINE);
     _interpolator->SetData(_times,_samples);
   }
 
@@ -121,8 +123,8 @@ class Waveform
   {
     _samples.clear();
     _times.clear();
-/*     if (_interpolator)  */
-/*       delete _interpolator;  */
+    if (_interpolator)
+      delete _interpolator;
   };
 
   //substract a fixed value from the samples

@@ -251,7 +251,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	 
 	 for (int it=0;it<thresholds.size();++it)
 	   {
-	     crossings[it]=waveforms[i].time_at_threshold(0,1000,thresholds[it]);
+	     crossings[it]=waveforms[i].time_at_threshold(0,1000,thresholds[it],NSAMPLES_INTERPOLATION);
 	     
 	     for(int is=0;is<std::min(MAX_THRESHOLDS_CROSSING, (int) crossings[it].size());++is)
 	       wave_timeCross[i][it][is]->Fill((crossings[it][is])*1.e9);
@@ -370,7 +370,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 
     for (int it=0;it<thresholds.size();++it)
       {
-	crossings_ref[it]=waveforms[0].time_at_threshold(0,1000,thresholds[it]);
+	crossings_ref[it]=waveforms[0].time_at_threshold(0,1000,thresholds[it],NSAMPLES_INTERPOLATION);
 
 	treeData.nCrossings[it]=crossings_ref[it].size();
 	for(int i=0;i<crossings_ref[it].size();++i)
@@ -384,7 +384,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	std::vector< std::vector<float> > crossings;
 	crossings.resize(thresholds.size());
 	for (int it=0;it<thresholds.size();++it)
-	  crossings[it]=waveforms[j].time_at_threshold(0,1000,thresholds[it]);
+	  crossings[it]=waveforms[j].time_at_threshold(0,1000,thresholds[it],NSAMPLES_INTERPOLATION);
 
 
 	Waveform difference;
