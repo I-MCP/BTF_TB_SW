@@ -18,19 +18,45 @@
 //using namespace iMCP_BTF_checkDRS4Calibration_namespace;
 
 #define MAX_SAMPLES_SIZE 1024
+#define MAX_THRESHOLDS 10
 #define MAX_THRESHOLDS_CROSSING 10
-#define THR_0_VALUE 2200
-#define THR_1_VALUE 2700
+#define MAX_CHANNELS 10
+/* #define THR_0_VALUE 2200 */
+/* #define THR_1_VALUE 2700 */
 
 //This class is an analyzer of the rawDataTree and produces a new tree with reconstruced and calibrated data
 class iMCP_BTF_checkDRS4Calibration : public iMCP_BTF_rawDataTree 
 {
  public :
+
+  struct eventData
+  {
+    unsigned int evtNumber;
+    unsigned int nInterestingChannels;
+    unsigned int interestingChannels[MAX_CHANNELS];
+    unsigned int nCrossings[MAX_THRESHOLDS];
+    float crossings[MAX_THRESHOLDS][MAX_CHANNELS][MAX_THRESHOLDS_CROSSING];
+    
+    void clear()
+    {
+/*       for (int i=0;i<MAX_CHANNELS;++i) */
+/* 	for (int j=0;i<MAX_THRESHOLDS_CROSSING;++j) */
+/* 	  { */
+/* 	    crossings_thr_0[i][j]=-999.; */
+/* 	    crossings_thr_1[i][j]=-999.; */
+/* 	  } */
+    }
+  };
+
   TString outFile;
   TTree* tree;
+
+  eventData treeData;
+
   int maxEntries=-1;
 
   std::vector<int> interestingChannels;
+  std::vector<float> thresholds;
   std::map<TString,TObject*> writableObjects;
 
   /*   iMCP_BTF_checkDRS4Calibration_format treeData; */
@@ -43,7 +69,7 @@ class iMCP_BTF_checkDRS4Calibration : public iMCP_BTF_rawDataTree
 
   //book tree branches
   /*   void bookEventInfo(); */
-  /*   void bookOutputTree(); */
+  void bookOutputTree(); 
   /*   void bookScintData(); */
   /*   void bookMcpData(); */
   /*   void bookHodoData(); */

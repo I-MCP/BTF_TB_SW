@@ -25,6 +25,19 @@ void iMCP_BTF_checkDRS4Calibration::cannotOpenFile(const char * file)
   exit(-1);
 }
 
+void iMCP_BTF_checkDRS4Calibration::bookOutputTree()
+{
+  tree->Branch("evtNumber",&(treeData.evtNumber),"evtNumber/i");
+  tree->Branch("nInterestingChannels",&(treeData.nInterestingChannels),"nInterestingChannels/i");
+  tree->Branch("interestingChannels",treeData.interestingChannels,"interestingChannels[nInterestingChannels]/i");
+  for(int it=0;it<thresholds.size();++it)
+    {
+      tree->Branch(Form("nCrossings_thr_%d",it),&(treeData.nCrossings[it]),Form("nCrossings_thr_%d/i",it));
+      tree->Branch(Form("crossings_thr_%d",it),&(treeData.crossings[it][0][0]),Form("crossings_thr_%d[%d][%d]/F",it,MAX_CHANNELS,MAX_THRESHOLDS_CROSSING));
+    }
+  tree->Print();
+}
+
 void iMCP_BTF_checkDRS4Calibration::Loop()
 {
   if (fChain == 0) return;
@@ -35,21 +48,19 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 
   std::cout << "===> output file " << outFile << " opened" << std::endl;
 
-  //   tree=new TTree("eventData","Simple Reconstructed Event Data");
-  //   std::cout << "===> output tree " << tree->GetName() << " created" << std::endl;
-  //   std::cout << "===> booking output tree" << std::endl;
-  //   bookOutputTree();
-  //   std::cout << "===> tree is booked" << std::endl;
+  tree=new TTree("eventData","Crossing Times");
+  std::cout << "===> output tree " << tree->GetName() << " created" << std::endl;
+  std::cout << "===> booking output tree" << std::endl;
+  bookOutputTree();
+  std::cout << "===> tree is booked" << std::endl;
 
   TString name;
 
   TH1F* wave_allSamples[interestingChannels.size()];
   TProfile* wave_profile[interestingChannels.size()];
   TH1F* wave_sample[interestingChannels.size()][1024];
-  TH1F* wave_thr_0_timeCross[interestingChannels.size()][MAX_THRESHOLDS_CROSSING];
-  TH1F* wave_thr_1_timeCross[interestingChannels.size()][MAX_THRESHOLDS_CROSSING];
-  TH1F* wave_thr_0_timeCross_difference[interestingChannels.size()][MAX_THRESHOLDS_CROSSING][MAX_THRESHOLDS_CROSSING];
-  TH1F* wave_thr_1_timeCross_difference[interestingChannels.size()][MAX_THRESHOLDS_CROSSING][MAX_THRESHOLDS_CROSSING];
+  TH1F* wave_timeCross[interestingChannels.size()][thresholds.size()][MAX_THRESHOLDS_CROSSING];
+  TH1F* wave_timeCross_difference[interestingChannels.size()][thresholds.size()][MAX_THRESHOLDS_CROSSING][MAX_THRESHOLDS_CROSSING];
 
   for (int i=0;i<interestingChannels.size();++i)
     {
@@ -70,29 +81,26 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 
       //writableObjects[name]=(TObject*) (new TProfile(name,name,1024,-0.5,1023.5)); //error is error on mean 
 
-      for(int is=0;is<MAX_THRESHOLDS_CROSSING;++is)
+      for(int it=0;it<thresholds.size();++it)
 	{
-	  name=Form("wave_%d_thr_0_timeCross_%d",interestingChannels[i],is);
-	  wave_thr_0_timeCross[i][is]=new TH1F(name,name,10000,0,1024);
-	  writableObjects[name]=(TObject*) ( wave_thr_0_timeCross[i][is]);
+	  for(int is=0;is<MAX_THRESHOLDS_CROSSING;++is)
+	    {
+	      name=Form("wave_%d_thr_%d_timeCross_%d",interestingChannels[i],it,is);
+	      wave_timeCross[i][it][is]=new TH1F(name,name,10000,0,1024);
+	      writableObjects[name]=(TObject*) ( wave_timeCross[i][it][is]);
+	    }
 	  
-	  name=Form("wave_%d_thr_1_timeCross_%d",interestingChannels[i],is);
-	  wave_thr_1_timeCross[i][is]=new TH1F(name,name,10000,0,1024);
-	  writableObjects[name]=(TObject*) (wave_thr_1_timeCross[i][is]);
+	  for(int is=0;is<MAX_THRESHOLDS_CROSSING-1;++is)
+	    for(int is1=is+1;is1<MAX_THRESHOLDS_CROSSING;++is1)
+	      {
+		name=Form("wave_%d_thr_%d_timeCross_%d_%d",interestingChannels[i],it,is,is1);
+		wave_timeCross_difference[i][it][is][is1]=new TH1F(name,name,50000,0,500);
+		writableObjects[name]=(TObject*) (  wave_timeCross_difference[i][it][is][is1] );
+	      }
 	}
-      for(int is=0;is<MAX_THRESHOLDS_CROSSING-1;++is)
-	for(int is1=is+1;is1<MAX_THRESHOLDS_CROSSING;++is1)
-	  {
-	    name=Form("wave_%d_thr_0_timeCross_%d_%d",interestingChannels[i],is,is1);
-	    wave_thr_0_timeCross_difference[i][is][is1]=new TH1F(name,name,50000,0,500);
-	    writableObjects[name]=(TObject*) (  wave_thr_0_timeCross_difference[i][is][is1] );
-	    
-	    name=Form("wave_%d_thr_1_timeCross_%d_%d",interestingChannels[i],is,is1);
-	    wave_thr_1_timeCross_difference[i][is][is1]=new TH1F(name,name,50000,0,500);
-	    writableObjects[name]=(TObject*) (  wave_thr_1_timeCross_difference[i][is][is1] );
-	  }
     }
 
+      
   TH1F* waveDifference_allSamples[interestingChannels.size()][interestingChannels.size()];
   TProfile* waveDifference_profile[interestingChannels.size()][interestingChannels.size()];
   TH1F* waveDifference_sample[interestingChannels.size()][interestingChannels.size()][1024];
@@ -100,8 +108,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
   TH1F* waveAlignDifference_allSamples[interestingChannels.size()][interestingChannels.size()];
   TProfile* waveAlignDifference_profile[interestingChannels.size()][interestingChannels.size()];
   TH1F* waveAlignDifference_sample[interestingChannels.size()][interestingChannels.size()][1024];
-  TH1F* waveAlignDifference_thr_0_timeCrossDiffference[interestingChannels.size()][interestingChannels.size()][MAX_THRESHOLDS_CROSSING];
-  TH1F* waveAlignDifference_thr_1_timeCrossDiffference[interestingChannels.size()][interestingChannels.size()][MAX_THRESHOLDS_CROSSING];
+  TH1F* waveAlignDifference_timeCrossDiffference[interestingChannels.size()][interestingChannels.size()][thresholds.size()][MAX_THRESHOLDS_CROSSING];
 
 
   for (int i=0;i<interestingChannels.size()-1;++i)
@@ -129,7 +136,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	name=Form("waveAlignDifference_%d_%d_profile",interestingChannels[i],interestingChannels[j]);
 	waveAlignDifference_profile[i][j]=new TProfile(name,name,1024,-0.5,1023.5,"s");
 	writableObjects[name]=(TObject*) (waveAlignDifference_profile[i][j]);
-
+	
 	for(int is=0;is<MAX_SAMPLES_SIZE;++is)
 	  {
 	    name=Form("waveAlignDifference_%d_%d_sample_%d",interestingChannels[i],interestingChannels[j],is);
@@ -137,16 +144,13 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	    writableObjects[name]=(TObject*) (waveAlignDifference_sample[i][j][is]);
 	  }
 
-	for(int is=0;is<MAX_THRESHOLDS_CROSSING;++is)
-	  {
-	    name=Form("waveAlignDifference_%d_%d_thr_0_timeCrossDifference_%d",interestingChannels[i],interestingChannels[j],is);
-	    waveAlignDifference_thr_0_timeCrossDiffference[i][j][is]=new TH1F(name,name,4000,-1,1);
-	    writableObjects[name]=(TObject*) (waveAlignDifference_thr_0_timeCrossDiffference[i][j][is]);
-
-	    name=Form("waveAlignDifference_%d_%d_thr_1_timeCrossDifference_%d",interestingChannels[i],interestingChannels[j],is);
-	    waveAlignDifference_thr_1_timeCrossDiffference[i][j][is]=new TH1F(name,name,4000,-1,1);
-	    writableObjects[name]=(TObject*) (waveAlignDifference_thr_1_timeCrossDiffference[i][j][is]);
-	}
+	for(int it=0;it<thresholds.size();++it)
+	  for(int is=0;is<MAX_THRESHOLDS_CROSSING;++is)
+	    {
+	      name=Form("waveAlignDifference_%d_%d_thr_%d_timeCrossDifference_%d",interestingChannels[i],interestingChannels[j],it,is);
+	      waveAlignDifference_timeCrossDiffference[i][j][it][is]=new TH1F(name,name,4000,-1,1);
+	      writableObjects[name]=(TObject*) (waveAlignDifference_timeCrossDiffference[i][j][it][is]);
+	    }
       }
 
   
@@ -183,9 +187,9 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
   watch.Start(true);
 
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
-
-//     //clear output tree data
-//     treeData.clear();
+    
+    //     //clear output tree data
+    //    treeData.clear();
     Waveform waveforms[interestingChannels.size()];
 //     for (int i=0;i<interestingChannels.size();++i)
 //       waveforms[i].clear();
@@ -208,12 +212,6 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	std::cout << "First event taken @ timestamp (days from 01/04/2014) " <<  ((float)startTimeStamp/1000.)/86400. << std::endl;
       }
 
-//     //Filling evtInfo
-//     treeData._evtInfo.evtNumber=evtNumber;
-//     treeData._evtInfo.evtTimestamp=evtTime;
-//     treeData._evtInfo.evtTimedist=evtTimeDist;
-//     treeData._evtInfo.evtTimeSinceStart=evtTimeStart;
-    
 
      //Loop over digiSamples 
      for (unsigned int i=0;i<nDigiSamples;++i)
@@ -248,31 +246,26 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	     wave_sample[i][j]->Fill(waveforms[i]._samples[j]);
 	   }
 	 
-	 std::vector<float> crossings_thr_0=waveforms[i].time_at_threshold(0,1000,THR_0_VALUE);
- 	 std::vector<float> crossings_thr_1=waveforms[i].time_at_threshold(0,1000,THR_1_VALUE);
-
- 	 for(int is=0;is<std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_0.size());++is)
- 	     wave_thr_0_timeCross[i][is]->Fill((crossings_thr_0[is])*1.e9);
-
- 	 for(int is=0;is<std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_1.size());++is)
- 	     wave_thr_1_timeCross[i][is]->Fill(crossings_thr_1[is]*1.e9);
+	 std::vector< std::vector<float> > crossings;
+	 crossings.resize(thresholds.size());
 	 
+	 for (int it=0;it<thresholds.size();++it)
+	   {
+	     crossings[it]=waveforms[i].time_at_threshold(0,1000,thresholds[it]);
+	     
+	     for(int is=0;is<std::min(MAX_THRESHOLDS_CROSSING, (int) crossings[it].size());++is)
+	       wave_timeCross[i][it][is]->Fill((crossings[it][is])*1.e9);
+	     
+	     for(int is=0;is< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings[it].size())-1;++is)
+	       for(int is1=is+1;is1< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings[it].size());++is1)
+		 {
+		   wave_timeCross_difference[i][it][is][is1]->Fill((crossings[it][is1]-crossings[it][is])*1.e9);
+		 }
+	   }
 
- 	 for(int is=0;is< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_0.size())-1;++is)
- 	   for(int is1=is+1;is1< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_0.size());++is1)
- 	     {
- 	       wave_thr_0_timeCross_difference[i][is][is1]->Fill((crossings_thr_0[is1]-crossings_thr_0[is])*1.e9);
- 	     }
-
- 	 for(int is=0;is< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_1.size())-1;++is)
- 	   for(int is1=is+1;is1< std::min(MAX_THRESHOLDS_CROSSING, (int) crossings_thr_1.size());++is1)
- 	     {
- 	       wave_thr_1_timeCross_difference[i][is][is1]->Fill((crossings_thr_1[is1]-crossings_thr_1[is])*1.e9);
- 	     }
        }
      
-
-
+     
      if ( interestingChannels.size()>1 )
        {
 	 //Build relative difference waveforms
@@ -298,7 +291,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
        }
 
   } //end loop over entries
-     
+      
      
   std::cout << "------ TIME ELAPSED IN ANALYSIS LOOP ----- " << watch.RealTime() << " ------- PER EVENT: " << (float) watch.RealTime() / (float) nentries << " ------ " << std::endl;
 
@@ -313,7 +306,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
   for ( int i=1; i<interestingChannels.size();++i)
     {
       ROOT::Math::Minimizer* minim;
-      WaveformFit::alignWaveform(((TProfile*) writableObjects[Form("wave_%d_profile",0)]),((TProfile*) writableObjects[Form("wave_%d_profile",interestingChannels[i])]),minim);
+      WaveformFit::alignWaveform(((TProfile*) writableObjects[Form("wave_%d_profile",interestingChannels[0])]),((TProfile*) writableObjects[Form("wave_%d_profile",interestingChannels[i])]),minim);
       const double *par=minim->X();
       alignPar_deltaV[i]=par[0];
       alignPar_deltaT[i]=par[1];
@@ -322,7 +315,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     
     //     //clear output tree data
-    //     treeData.clear();
+    treeData.clear();
 
     Waveform waveforms[interestingChannels.size()];
 
@@ -344,12 +337,12 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	startTimeStamp=evtTime;
 	std::cout << "First event taken @ timestamp (days from 01/04/2014) " <<  ((float)startTimeStamp/1000.)/86400. << std::endl;
       }
-    
+
     //     //Filling evtInfo
-    //     treeData._evtInfo.evtNumber=evtNumber;
-    //     treeData._evtInfo.evtTimestamp=evtTime;
-    //     treeData._evtInfo.evtTimedist=evtTimeDist;
-    //     treeData._evtInfo.evtTimeSinceStart=evtTimeStart;
+     treeData.evtNumber=evtNumber;
+     treeData.nInterestingChannels=interestingChannels.size();
+     for (int i=0;i<interestingChannels.size();++i)
+       treeData.interestingChannels[i]=interestingChannels[i];
     
      //Loop over digiSamples 
     for (unsigned int i=0;i<nDigiSamples;++i)
@@ -371,17 +364,28 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	 if ( chInterest[digiChannel[i]]>-1 &&  chInterest[digiChannel[i]]<interestingChannels.size() )
 	   waveforms[chInterest[digiChannel[i]]].addTimeAndSample( ( digiSampleIndex[i] - alignPar_deltaT[chInterest[digiChannel[i]]]) * 0.2e-9, digiSampleValue[i]+alignPar_deltaV[chInterest[digiChannel[i]]]);
        }
-   //end loop over digis
+    //end loop over digis
+    std::vector< std::vector<float> > crossings_ref;
+    crossings_ref.resize(thresholds.size());
 
-    std::vector<float> crossings_thr_0_ref=waveforms[0].time_at_threshold(0,1000,THR_0_VALUE);
-    std::vector<float> crossings_thr_1_ref=waveforms[0].time_at_threshold(0,1000,THR_1_VALUE);    
+    for (int it=0;it<thresholds.size();++it)
+      {
+	crossings_ref[it]=waveforms[0].time_at_threshold(0,1000,thresholds[it]);
+
+	treeData.nCrossings[it]=crossings_ref[it].size();
+	for(int i=0;i<crossings_ref[it].size();++i)
+	  treeData.crossings[it][0][i]=crossings_ref[it][i] * 1.e9;
+      }
 
     for (int j=1;j<interestingChannels.size();++j)
       {
 	waveforms[j].interpolate();
 
-	std::vector<float> crossings_thr_0=waveforms[j].time_at_threshold(0,1000,THR_0_VALUE);
-	std::vector<float> crossings_thr_1=waveforms[j].time_at_threshold(0,1000,THR_1_VALUE);    
+	std::vector< std::vector<float> > crossings;
+	crossings.resize(thresholds.size());
+	for (int it=0;it<thresholds.size();++it)
+	  crossings[it]=waveforms[j].time_at_threshold(0,1000,thresholds[it]);
+
 
 	Waveform difference;
 	assert(waveforms[0]._samples.size() == waveforms[j]._samples.size());
@@ -397,22 +401,30 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	    
  	  }
 
-	for (int is=0;is<std::min(crossings_thr_0.size(),crossings_thr_0_ref.size());++is)
-	  waveAlignDifference_thr_0_timeCrossDiffference[0][j][is]->Fill( (crossings_thr_0_ref[is]- crossings_thr_0[is]) * 1.e9 );
-
-	for (int is=0;is<std::min(crossings_thr_1.size(),crossings_thr_1_ref.size());++is)
-	  waveAlignDifference_thr_1_timeCrossDiffference[0][j][is]->Fill( (crossings_thr_1_ref[is]- crossings_thr_1[is] ) * 1.e9 );
-
+	
+	for (int it=0;it<thresholds.size();++it)
+	  for (int is=0;is<std::min(crossings[it].size(),crossings_ref[it].size());++is)
+	    {
+	      waveAlignDifference_timeCrossDiffference[0][j][it][is]->Fill( (crossings_ref[it][is]- crossings[it][is]) * 1.e9 );
+	      treeData.crossings[it][j][is]=crossings[it][is] * 1.e9;
+	    }
       }
+  
+    tree->Fill();
+     
   }
 
+    
 
-  //   tree->Write();
-  //Writing out all objects
+  tree->Write();
+//   //Writing out all objects
   for (std::map<TString,TObject*>::iterator it=writableObjects.begin();it!=writableObjects.end();++it)
     {
       if (((TH1F*) it->second)->GetEntries()>0)
-	it->second->Write();
+	{
+	  std::cout << "Writing " << it->first << std::endl;
+	  it->second->Write();
+	}
     }
   out->Close();
   std::cout << "===> " << outFile << " closed" << std::endl;
