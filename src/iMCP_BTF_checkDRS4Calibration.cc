@@ -30,6 +30,8 @@ void iMCP_BTF_checkDRS4Calibration::bookOutputTree()
   tree->Branch("evtNumber",&(treeData.evtNumber),"evtNumber/i");
   tree->Branch("nInterestingChannels",&(treeData.nInterestingChannels),"nInterestingChannels/i");
   tree->Branch("interestingChannels",treeData.interestingChannels,"interestingChannels[nInterestingChannels]/i");
+  tree->Branch("nThresholds",&(treeData.nThresholds),"nThresholds/i");
+  tree->Branch("thresholds",treeData.thresholds,"thresholds[nThresholds]/F");
   for(int it=0;it<thresholds.size();++it)
     {
       tree->Branch(Form("nCrossings_thr_%d",it),&(treeData.nCrossings[it]),Form("nCrossings_thr_%d/i",it));
@@ -338,11 +340,14 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	std::cout << "First event taken @ timestamp (days from 01/04/2014) " <<  ((float)startTimeStamp/1000.)/86400. << std::endl;
       }
 
-    //     //Filling evtInfo
-     treeData.evtNumber=evtNumber;
-     treeData.nInterestingChannels=interestingChannels.size();
-     for (int i=0;i<interestingChannels.size();++i)
-       treeData.interestingChannels[i]=interestingChannels[i];
+    //     Filling evtInfo
+    treeData.evtNumber=evtNumber;
+    treeData.nInterestingChannels=interestingChannels.size();
+    for (int i=0;i<interestingChannels.size();++i)
+      treeData.interestingChannels[i]=interestingChannels[i];
+    treeData.nThresholds=thresholds.size();
+    for (int i=0;i<thresholds.size();++i)
+      treeData.thresholds[i]=thresholds[i];
     
      //Loop over digiSamples 
     for (unsigned int i=0;i<nDigiSamples;++i)

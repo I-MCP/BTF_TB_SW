@@ -36,6 +36,8 @@ class iMCP_BTF_checkDRS4Calibration : public iMCP_BTF_rawDataTree
     unsigned int evtNumber;
     unsigned int nInterestingChannels;
     unsigned int interestingChannels[MAX_CHANNELS];
+    unsigned int nThresholds;
+    float thresholds[MAX_THRESHOLDS];
     unsigned int nCrossings[MAX_THRESHOLDS];
     float crossings[MAX_THRESHOLDS][MAX_CHANNELS][MAX_THRESHOLDS_CROSSING];
     
