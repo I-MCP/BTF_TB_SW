@@ -92,26 +92,26 @@ void iMCP_BTF_rawDataTree::Book(TTree *tree)
   fChain = tree;
   fCurrent = -1;
 
-  fChain->Branch("evtNumber",&evtNumber,"evtNumber/i");
-  fChain->Branch("evtTimeDist",&evtTimeDist,"evtTimeDist/i");
-  fChain->Branch("evtTimeStart",&evtTimeStart,"evtTimeStart/i");
-  fChain->Branch("evtTime",&evtTime,"evtTime/i");
-  fChain->Branch("boardTriggerBit",&boardTriggerBit,"boardTriggerBit/i");
-  fChain->Branch("triggerWord",&triggerWord,"triggerWord/i");
-  fChain->Branch("nAdcChannels",&nAdcChannels,"nAdcChannels/i");
-  fChain->Branch("adcBoard",adcBoard,"adcBoard[nAdcChannels]/i");
-  fChain->Branch("adcChannel",adcChannel,"adcChannel[nAdcChannels]/i");
-  fChain->Branch("adcData",adcData,"adcData[nAdcChannels]/i");
-  fChain->Branch("nTdcChannels",&nTdcChannels,"nTdcChannels/i");
-  fChain->Branch("tdcBoard",tdcBoard,"tdcBoard[nTdcChannels]/i");
-  fChain->Branch("tdcChannel",tdcChannel,"tdcChannel[nTdcChannels]/i");
-  fChain->Branch("tdcData",tdcData,"tdcData[nTdcChannels]/i");
-  fChain->Branch("nDigiSamples",&nDigiSamples,"nDigiSamples/i");
-  fChain->Branch("digiGroup",digiGroup,"digiGroup[nDigiSamples]/i");
-  fChain->Branch("digiChannel",digiChannel,"digiChannel[nDigiSamples]/i");
-  fChain->Branch("digiSampleIndex",digiSampleIndex,"digiSampleIndex[nDigiSamples]/i");
-  fChain->Branch("digiSampleValue",digiSampleValue,"digiSample[nDigiSamples]/F");
-
+  tree->Branch("evtNumber",&evtNumber,"evtNumber/i");
+  tree->Branch("evtTimeDist",&evtTimeDist,"evtTimeDist/i");
+  tree->Branch("evtTimeStart",&evtTimeStart,"evtTimeStart/i");
+  tree->Branch("evtTime",&evtTime,"evtTime/i");
+  tree->Branch("boardTriggerBit",&boardTriggerBit,"boardTriggerBit/i");
+  tree->Branch("triggerWord",&triggerWord,"triggerWord/i");
+  tree->Branch("nAdcChannels",&nAdcChannels,"nAdcChannels/i");
+  tree->Branch("adcBoard",adcBoard,"adcBoard[nAdcChannels]/i");
+  tree->Branch("adcChannel",adcChannel,"adcChannel[nAdcChannels]/i");
+  tree->Branch("adcData",adcData,"adcData[nAdcChannels]/i");
+  tree->Branch("nTdcChannels",&nTdcChannels,"nTdcChannels/i");
+  tree->Branch("tdcBoard",tdcBoard,"tdcBoard[nTdcChannels]/i");
+  tree->Branch("tdcChannel",tdcChannel,"tdcChannel[nTdcChannels]/i");
+  tree->Branch("tdcData",tdcData,"tdcData[nTdcChannels]/i");
+  tree->Branch("nDigiSamples",&nDigiSamples,"nDigiSamples/i");
+  tree->Branch("digiGroup",digiGroup,"digiGroup[nDigiSamples]/i");
+  tree->Branch("digiChannel",digiChannel,"digiChannel[nDigiSamples]/i");
+  tree->Branch("digiSampleIndex",digiSampleIndex,"digiSampleIndex[nDigiSamples]/i");
+  tree->Branch("digiSampleValue",digiSampleValue,"digiSample[nDigiSamples]/F");
+  tree->Print();
 }
 
 Bool_t iMCP_BTF_rawDataTree::Notify()

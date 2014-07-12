@@ -7,7 +7,7 @@
 
 namespace WaveformUtils
 {
-  Waveform generateWaveform(TProfile* ref_profile,float sampleSize,int nSamples);
+  Waveform generateWaveform(TProfile* ref_profile,float sampleSize,int nSamples, float rms_amplitude_noise);
 };
 
 #endif

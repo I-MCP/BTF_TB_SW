@@ -14,10 +14,10 @@ def path_leaf(path):
 from optparse import OptionParser
 parser=OptionParser()
 parser.add_option("-p","--profileFile")
+parser.add_option("-s","--rms_amplitude_noise")
 parser.add_option("-L","--libDir")
 parser.add_option("-n","--numberOfEvents",default=-1)
 parser.add_option("-d","--dir") # DQM_HOME directory
-parser.add_option("-o","--outputDir")
 parser.add_option("-o","--outputDir")
 #parser.add_option("-p","--plotsDir")
 
@@ -27,20 +27,15 @@ import ROOT as r
 r.gROOT.SetBatch(1)
 r.gSystem.Load(options.libDir+"/libBTFTBSW.so")
 
-file = r.TFile.Open(options.inputFile)
-if (not file.IsOpen()):
-    print "Cannot open "+ options.inputFile
-    exit(-1)
-tree = file.Get("eventRawData")
 
 os.system('mkdir -p %s'%options.outputDir)
 
-a=r.iMCP_BTF_checkDRS4Calibration(tree)
-channels=options.channels.split(',')
-for channel in channels:
-    a.interestingChannels.push_back(int(channel))
+a=r.SimulatePulses()
 
-a.maxEntries=int(options.numberOfEvents)
-a.outFile=options.outputDir+"/"+os.path.splitext(path_leaf(options.inputFile))[0]+"_checkDRS4Histos.root"
+a.profileFile=options.profileFile
+a.nEvents=int(options.numberOfEvents)
+a.outFile=options.outputDir+"/"+os.path.splitext(path_leaf(options.profileFile))[0]+"_simulatedPulses_RAWDATA.root"
+a.rms_amplitude_noise=float(options.rms_amplitude_noise)
+
 a.Loop()
 
