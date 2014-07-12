@@ -11,4 +11,5 @@
 #pragma link C++ class iMCP_PILAS_simpleRecoTree+;
 #pragma link C++ class iMCP_PILAS_simpleRecoTree_format+;
 #pragma link C++ class Waveform+;
+#pragma link C++ class SimulatePulses+;
 #endif

@@ -2,6 +2,10 @@
 
 ClassImp(iMCP_BTF_rawDataTree);
 
+iMCP_BTF_rawDataTree::iMCP_BTF_rawDataTree() : fChain(0) 
+{
+}
+
 iMCP_BTF_rawDataTree::iMCP_BTF_rawDataTree(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
@@ -78,6 +82,36 @@ void iMCP_BTF_rawDataTree::Init(TTree *tree)
    fChain->SetBranchAddress("digiSampleIndex", digiSampleIndex, &b_digiSampleIndex);
    fChain->SetBranchAddress("digiSampleValue", digiSampleValue, &b_digiSampleValue);
    Notify();
+}
+
+void iMCP_BTF_rawDataTree::Book(TTree *tree)
+{
+  
+  // Set branch addresses and branch pointers
+  if (!tree) return;
+  fChain = tree;
+  fCurrent = -1;
+
+  fChain->Branch("evtNumber",&evtNumber,"evtNumber/i");
+  fChain->Branch("evtTimeDist",&evtTimeDist,"evtTimeDist/i");
+  fChain->Branch("evtTimeStart",&evtTimeStart,"evtTimeStart/i");
+  fChain->Branch("evtTime",&evtTime,"evtTime/i");
+  fChain->Branch("boardTriggerBit",&boardTriggerBit,"boardTriggerBit/i");
+  fChain->Branch("triggerWord",&triggerWord,"triggerWord/i");
+  fChain->Branch("nAdcChannels",&nAdcChannels,"nAdcChannels/i");
+  fChain->Branch("adcBoard",adcBoard,"adcBoard[nAdcChannels]/i");
+  fChain->Branch("adcChannel",adcChannel,"adcChannel[nAdcChannels]/i");
+  fChain->Branch("adcData",adcData,"adcData[nAdcChannels]/i");
+  fChain->Branch("nTdcChannels",&nTdcChannels,"nTdcChannels/i");
+  fChain->Branch("tdcBoard",tdcBoard,"tdcBoard[nTdcChannels]/i");
+  fChain->Branch("tdcChannel",tdcChannel,"tdcChannel[nTdcChannels]/i");
+  fChain->Branch("tdcData",tdcData,"tdcData[nTdcChannels]/i");
+  fChain->Branch("nDigiSamples",&nDigiSamples,"nDigiSamples/i");
+  fChain->Branch("digiGroup",digiGroup,"digiGroup[nDigiSamples]/i");
+  fChain->Branch("digiChannel",digiChannel,"digiChannel[nDigiSamples]/i");
+  fChain->Branch("digiSampleIndex",digiSampleIndex,"digiSampleIndex[nDigiSamples]/i");
+  fChain->Branch("digiSampleValue",digiSampleValue,"digiSample[nDigiSamples]/F");
+
 }
 
 Bool_t iMCP_BTF_rawDataTree::Notify()

@@ -120,11 +120,14 @@ public :
   TBranch        *b_digiSampleValue;   //!
    
    
-   iMCP_BTF_rawDataTree(TTree *tree=0);
+   iMCP_BTF_rawDataTree();
+   iMCP_BTF_rawDataTree(TTree *tree);
+
    virtual ~iMCP_BTF_rawDataTree();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
+   virtual void     Book(TTree *tree);
    virtual void     Init(TTree *tree);
    virtual void     Loop();
    virtual Bool_t   Notify();
