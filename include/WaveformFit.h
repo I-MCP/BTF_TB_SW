@@ -8,6 +8,6 @@
 namespace WaveformFit
 {
   void alignWaveform(TProfile* ref_profile, TProfile* fit_profile, ROOT::Math::Minimizer* &minimizer);
-  void fitWaveform(Waveform* wave, TProfile* amplitudeProfile, int x1, int x2, ROOT::Math::Minimizer* &minimizer);
+  void fitWaveform(Waveform* wave, TProfile* amplitudeProfile, int samplesAfterMax, Waveform::max_amplitude_informations max, ROOT::Math::Minimizer* &minimizer);
 }
 #endif

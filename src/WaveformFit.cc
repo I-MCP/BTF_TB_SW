@@ -45,7 +45,7 @@ namespace WaveformFit
     for (int i=xMin;i<=xMax;++i)
       {
 	//	delta=(refWave->GetBinContent(i)-(y_interpolator->Eval(refWave->GetBinCenter(i)+par[1])+par[0]))/(TMath::Sqrt(refWave->GetBinError(i)*refWave->GetBinError(i)+y_err_interpolator->Eval(refWave->GetBinCenter(i)+par[1])*y_err_interpolator->Eval(refWave->GetBinCenter(i)+par[1])));
-	delta= ((*waveData)._samples[i]-(y_interpolator->Eval((*waveData)._times[i]-par[1])*par[0])); //fit par[0]*ref_shape(t-par[1]) par[0]=amplitude, par[1]=DeltaT
+	delta= ((*waveData)._samples[i]-(y_interpolator->Eval((*waveData)._times[i]*1.e9-par[1])*par[0])); //fit par[0]*ref_shape(t-par[1]) par[0]=amplitude, par[1]=DeltaT
 	chisq += delta*delta;
       }
     return chisq;
@@ -99,10 +99,10 @@ namespace WaveformFit
     //     minimizer=min;
   }
 
-  void fitWaveform(Waveform* wave, TProfile* amplitudeProfile, int x1, int x2, ROOT::Math::Minimizer* &minimizer)
+  void fitWaveform(Waveform* wave, TProfile* amplitudeProfile, int nSamplesBeforeMax, int nSamplesAfterMax, Waveform::max_amplitude_informations max, ROOT::Math::Minimizer* &minimizer)
   {
-    xMin=x1;
-    xMax=x2;
+    xMin=max.sample_at_max-nSamplesBeforeMax;
+    xMax=max.sample_at_max-nSamplesAfterMax;
 
     waveData=wave;
     fitWave=amplitudeProfile;
