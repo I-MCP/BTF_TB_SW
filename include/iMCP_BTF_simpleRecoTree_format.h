@@ -47,7 +47,9 @@ namespace iMCP_BTF_simpleRecoTree_namespace
     float pedestal_rms; //from pre-samples;
     float max_amplitude; //max_value;
     float fit_max_amplitude; //max_value from fit
+    float fit_max_amplitude_err; //max_value from fit
     float fit_time; //time as fitted
+    float fit_time_err; //time as fitted
     float fit_compatibility; //time as fitted
     float fit_edm; //time as fitted
     float fit_ndof; //time as fitted

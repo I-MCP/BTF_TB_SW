@@ -60,6 +60,16 @@ namespace WaveformFit
     return chisq;
   }
 
+  void residuals(const double *par )
+  {
+    std::cout << "++++++++++++++++++++++++++++++++++" << std::endl;
+    for (int i=xMin;i<=xMax;++i)
+      {
+	float res = ((*waveData)._samples[i]-(y_interpolator->Eval((*waveData)._times[i]*1.e9-par[1])*par[0]))/sampleRMS; //fit par[0]*ref_shape(t-par[1]) par[0]=amplitude, par[1]=DeltaT
+	std::cout << "===> " << (i-xMin) << " " << (*waveData)._samples[i] << " " << res << std::endl;
+      }
+  }
+
   void alignWaveform(TProfile* ref_profile, TProfile* fit_profile, ROOT::Math::Minimizer* &minimizer)
   {    
     xMin=1;
@@ -147,11 +157,15 @@ namespace WaveformFit
     minimizer->SetLimitedVariable(1,"deltaT",max.time_at_max*1.e9,1e-3,max.time_at_max*1.e9-0.5,max.time_at_max*1.e9+0.5);
 
     minimizer->Minimize();
-   
-    const double* par=minimizer->X();
 
-    // std::cout << "+++++ FIT RESULT: " << par[0] << "," << par[1] << std::endl;
-
+//     if (minimizer->Status()==0)
+//       {
+// 	const double* par=minimizer->X();
+	
+// 	// std::cout << "+++++ FIT RESULT: " << par[0] << "," << par[1] << std::endl;
+// 	residuals(par);
+//       }
+    
     delete y_interpolator;
     y_interpolator=0;
   }

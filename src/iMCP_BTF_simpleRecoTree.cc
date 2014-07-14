@@ -68,7 +68,9 @@ void iMCP_BTF_simpleRecoTree::bookWaveform(TString name, waveform_data& waveform
   tree->Branch(name+"_pedestal",&waveform.pedestal,name+"_pedestal/F");
   tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
   tree->Branch(name+"_fit_max_amplitude",&waveform.fit_max_amplitude,name+"_fit_max_amplitude/F");
+  tree->Branch(name+"_fit_max_amplitude_err",&waveform.fit_max_amplitude_err,name+"_fit_max_amplitude_err/F");
   tree->Branch(name+"_fit_time",&waveform.fit_time,name+"_fit_time/F");
+  tree->Branch(name+"_fit_time_err",&waveform.fit_time_err,name+"_fit_time_err/F");
   tree->Branch(name+"_fit_compatibility",&waveform.fit_compatibility,name+"_fit_compatibility/F");
   tree->Branch(name+"_fit_ndof",&waveform.fit_ndof,name+"_fit_ndof/F");
   tree->Branch(name+"_fit_edm",&waveform.fit_edm,name+"_fit_edm/F");
@@ -243,9 +245,12 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	    WaveformFit::fitWaveform(&mcp_waveforms[i],mcpFitProfiles[i],13,3,mcp_max[i],mcp_pedestals[i],minim);
 	    
 	    const double *par=minim->X();
+	    const double *errors=minim->Errors();
 	    
 	    treeData._mcpData.mcp_digi_data[i].fit_max_amplitude=par[0];
+	    treeData._mcpData.mcp_digi_data[i].fit_max_amplitude_err=errors[0];
 	    treeData._mcpData.mcp_digi_data[i].fit_time=par[1];
+	    treeData._mcpData.mcp_digi_data[i].fit_time_err=errors[1];
 	    treeData._mcpData.mcp_digi_data[i].fit_compatibility=minim->MinValue();
 	    treeData._mcpData.mcp_digi_data[i].fit_edm=minim->Edm();
 	    treeData._mcpData.mcp_digi_data[i].fit_ndof=16-minim->NFree();
@@ -253,7 +258,9 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	else
 	  {
 	    treeData._mcpData.mcp_digi_data[i].fit_max_amplitude=-999;
+	    treeData._mcpData.mcp_digi_data[i].fit_max_amplitude_err=-999;
 	    treeData._mcpData.mcp_digi_data[i].fit_time=-999;
+	    treeData._mcpData.mcp_digi_data[i].fit_time_err=-999;
 	    treeData._mcpData.mcp_digi_data[i].fit_compatibility=9999;
 	    treeData._mcpData.mcp_digi_data[i].fit_edm=9999;
 	    treeData._mcpData.mcp_digi_data[i].fit_ndof=-999;
