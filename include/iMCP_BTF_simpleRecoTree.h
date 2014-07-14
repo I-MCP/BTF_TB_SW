@@ -5,6 +5,7 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TString.h>
+#include <TProfile.h>
 
 #include <string>
 
@@ -65,6 +66,10 @@ using namespace iMCP_BTF_simpleRecoTree_namespace;
 class iMCP_BTF_simpleRecoTree : public iMCP_BTF_rawDataTree 
 {
  public :
+
+  TString mcpFitWaveFile;
+  std::vector<TProfile*> mcpFitProfiles; 
+
   TString outFile;
   TTree* tree;
   int maxEntries=-1;

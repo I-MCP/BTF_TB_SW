@@ -46,6 +46,11 @@ namespace iMCP_BTF_simpleRecoTree_namespace
     float pedestal; //from pre-samples;
     float pedestal_rms; //from pre-samples;
     float max_amplitude; //max_value;
+    float fit_max_amplitude; //max_value from fit
+    float fit_time; //time as fitted
+    float fit_compatibility; //time as fitted
+    float fit_edm; //time as fitted
+    float fit_ndof; //time as fitted
     float time_at_max; //emualated constant fraction data
     float time_at_frac30; //emualated constant fraction data
     float time_at_frac50; //emualated constant fraction data
@@ -59,6 +64,11 @@ namespace iMCP_BTF_simpleRecoTree_namespace
       pedestal=-1;
       pedestal_rms=-1;
       max_amplitude=-1;
+      fit_max_amplitude=-1;
+      fit_time=-1;
+      fit_compatibility=-1;
+      fit_edm=-1;
+      fit_ndof=-1;
       time_at_max=-1;
       time_at_frac30=-1;
       time_at_frac50=-1;

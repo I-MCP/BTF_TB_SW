@@ -14,6 +14,7 @@ def path_leaf(path):
 from optparse import OptionParser
 parser=OptionParser()
 parser.add_option("-i","--inputFile")
+parser.add_option("-p","--profileFitFile")
 parser.add_option("-L","--libDir")
 parser.add_option("-n","--numberOfEvents",default=-1)
 parser.add_option("-d","--dir") # DQM_HOME directory
@@ -36,6 +37,7 @@ os.system('mkdir -p %s'%options.outputDir)
 
 a=r.iMCP_BTF_simpleRecoTree(tree)
 a.maxEntries=int(options.numberOfEvents)
+a.mcpFitWaveFile=options.profileFitFile
 a.outFile=options.outputDir+"/"+os.path.splitext(path_leaf(options.inputFile))[0]+"_RECO.root"
 a.Loop()
 

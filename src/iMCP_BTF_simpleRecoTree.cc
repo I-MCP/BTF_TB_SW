@@ -1,7 +1,11 @@
 #include "iMCP_BTF_simpleRecoTree.h"
 #include "Waveform.h"
+#include "WaveformFit.h"
 
 #include <iostream>
+
+#include <TKey.h>
+#include <TPRegexp.h>
 
 ClassImp(iMCP_BTF_simpleRecoTree);
 
@@ -63,6 +67,11 @@ void iMCP_BTF_simpleRecoTree::bookWaveform(TString name, waveform_data& waveform
 {
   tree->Branch(name+"_pedestal",&waveform.pedestal,name+"_pedestal/F");
   tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
+  tree->Branch(name+"_fit_max_amplitude",&waveform.fit_max_amplitude,name+"_fit_max_amplitude/F");
+  tree->Branch(name+"_fit_time",&waveform.fit_time,name+"_fit_time/F");
+  tree->Branch(name+"_fit_compatibility",&waveform.fit_compatibility,name+"_fit_compatibility/F");
+  tree->Branch(name+"_fit_ndof",&waveform.fit_ndof,name+"_fit_ndof/F");
+  tree->Branch(name+"_fit_edm",&waveform.fit_edm,name+"_fit_edm/F");
   tree->Branch(name+"_max_amplitude",&waveform.max_amplitude,name+"_max_amplitude/F");
   tree->Branch(name+"_time_at_frac30",&waveform.time_at_frac30,name+"_time_at_frac30/F");
   tree->Branch(name+"_time_at_frac50",&waveform.time_at_frac50,name+"_time_at_frac50/F");
@@ -95,7 +104,23 @@ void iMCP_BTF_simpleRecoTree::cannotOpenFile(const char * file)
 void iMCP_BTF_simpleRecoTree::Loop()
 {
   if (fChain == 0) return;
- 
+
+
+  //Reading mcp fit profiles from file
+  TFile *prof = TFile::Open(mcpFitWaveFile);
+  if (!prof->IsOpen())
+    cannotOpenFile(mcpFitWaveFile.Data());
+  TIter nextkey(prof->GetListOfKeys());
+  TPRegexp matchName("mcp_(\\d+)_fitProfile");
+  TKey *key;
+  while (key = (TKey*)nextkey()) {
+    TProfile* p=(TProfile*) key->ReadObj();
+    if (!TString(p->GetName()).Contains(matchName))
+      continue;
+    std::cout << "Getting wave profile " << p->GetName() << std::endl;
+    mcpFitProfiles.push_back(p);
+  }
+  
   TFile *out = TFile::Open(outFile,"RECREATE");  
   if (!out->IsOpen())
     cannotOpenFile(outFile.Data());
@@ -199,6 +224,7 @@ void iMCP_BTF_simpleRecoTree::Loop()
       {
 	mcp_pedestals[i]=mcp_waveforms[i].baseline(5,44); //use 40 samples between 5-44 to get pedestal and RMS
 	mcp_waveforms[i].offset(mcp_pedestals[i].pedestal);
+
 	if (i!=4)
 	  mcp_waveforms[i].rescale(-1); //invert Buderk MCPs signal
 	mcp_max[i]=mcp_waveforms[i].max_amplitude(150,350,5); //find max amplitude between 50 and 500 samples
@@ -210,6 +236,28 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	treeData._mcpData.mcp_digi_data[i].time_at_max=mcp_max[i].time_at_max*1.e9;
 	treeData._mcpData.mcp_digi_data[i].time_at_frac30=mcp_waveforms[i].time_at_frac(mcp_max[i].time_at_max - 3.e-9, mcp_max[i].time_at_max, 0.3,  mcp_max[i],7)*1.e9; 
 	treeData._mcpData.mcp_digi_data[i].time_at_frac50=mcp_waveforms[i].time_at_frac(mcp_max[i].time_at_max - 3.e-9, mcp_max[i].time_at_max, 0.5,  mcp_max[i],7)*1.e9; 
+
+	if (mcp_max[i].max_amplitude>20)
+	  {
+	    ROOT::Math::Minimizer* minim;
+	    WaveformFit::fitWaveform(&mcp_waveforms[i],mcpFitProfiles[i],13,3,mcp_max[i],mcp_pedestals[i],minim);
+	    
+	    const double *par=minim->X();
+	    
+	    treeData._mcpData.mcp_digi_data[i].fit_max_amplitude=par[0];
+	    treeData._mcpData.mcp_digi_data[i].fit_time=par[1];
+	    treeData._mcpData.mcp_digi_data[i].fit_compatibility=minim->MinValue();
+	    treeData._mcpData.mcp_digi_data[i].fit_edm=minim->Edm();
+	    treeData._mcpData.mcp_digi_data[i].fit_ndof=16-minim->NFree();
+	  }
+	else
+	  {
+	    treeData._mcpData.mcp_digi_data[i].fit_max_amplitude=-999;
+	    treeData._mcpData.mcp_digi_data[i].fit_time=-999;
+	    treeData._mcpData.mcp_digi_data[i].fit_compatibility=9999;
+	    treeData._mcpData.mcp_digi_data[i].fit_edm=9999;
+	    treeData._mcpData.mcp_digi_data[i].fit_ndof=-999;
+	  }
 
 	//Fill baseline samples
 	for (unsigned int isample(0);isample<BASELINE_DIGI_SAMPLES_TO_STORE;++isample)
@@ -241,6 +289,8 @@ void iMCP_BTF_simpleRecoTree::Loop()
 	treeData._scintData.scint_digi_data[i].time_at_max=scint_max[i].time_at_max*1.e9;
 	treeData._scintData.scint_digi_data[i].time_at_frac30=scint_waveforms[i].time_at_frac(scint_max[i].time_at_max - 30.e-9, scint_max[i].time_at_max, 0.3,  scint_max[i],7)*1.e9; 
 	treeData._scintData.scint_digi_data[i].time_at_frac50=scint_waveforms[i].time_at_frac(scint_max[i].time_at_max - 30.e-9, scint_max[i].time_at_max, 0.5,  scint_max[i],7)*1.e9; 
+
+
 
 	//Fill baseline samples
 	for (unsigned int isample(0);isample<BASELINE_DIGI_SAMPLES_TO_STORE;++isample)
