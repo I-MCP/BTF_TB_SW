@@ -84,6 +84,68 @@ Waveform::max_amplitude_informations Waveform::max_amplitude(const int& x1, cons
   return return_value;
 };
 
+
+//Get the residual value between a sample and expected value from interpolating samples
+float Waveform::interpolatedValue(const int& i1, int SampleToInterpolate) const
+{
+  int cfSample=i1;
+
+  //  std::cout <<  "++++ "  << cfSample << std::endl;
+  if (cfSample>-1)
+    {
+      double x[SampleToInterpolate];
+      double y[SampleToInterpolate];
+      double syy=0,sxy=0,sxx=0,sx=0,sy=0;
+      int nSamples=0;
+      for (unsigned int i(0);i<SampleToInterpolate;++i)
+	{
+	  if ( (cfSample-(SampleToInterpolate-1)/2+i)>=0 && (cfSample-(SampleToInterpolate-1)/2+i)<=(int)_samples.size() )
+	    {
+	      //	      x[i]=cfSample-(SampleToInterpolate-1)/2+i;
+	      x[i]=(_times[cfSample-(SampleToInterpolate-1)/2+i] - _times[cfSample])*1e9 ;
+	      y[i]=_samples[cfSample-(SampleToInterpolate-1)/2+i];
+	      //std::cout <<  cfSample << "," << cfSample-(SampleToInterpolate-1)/2+i << "," << x[i] << "," << y[i] << std::endl;
+	      syy+=y[i]*y[i];
+	      sxy+=x[i]*y[i];
+	      sxx+=x[i]*x[i];
+	      sy+=y[i];
+	      sx+=x[i];
+      	      ++nSamples;
+	    }
+	  else
+	    {
+	      if (WARNING_ERROR)
+		std::cout << "WARNING::Waveform::max_amplitude::maximum found too close to gate edges. Increase gate width" << std::endl;
+	    }
+	}
+
+      if (nSamples>1)
+	{
+// 	  //Now fit with parabolic function around maximum value
+// 	  TGraph* graph=new TGraph(nSamples,x,y);
+// 	  graph->Fit("pol1","Q0+");
+
+// 	  //FIXME Add a check on the FIT status
+// 	  double *par=graph->GetFunction("pol1")->GetParameters();
+
+	  double b = (nSamples*sxy-sx*sy)/(double) (nSamples*sxx - sx*sx);
+	  double a = (sy - b*sx)/(double) nSamples;
+	  return a;
+	  
+// 	  return -(par[0]/par[1])/1.e9;
+// 	  delete graph;
+	}
+      else
+	{
+	  if (WARNING_ERROR)
+	    std::cout << "WARNING::Waveform::max_amplitude::not enough samples to interpolate. Returning -999." << std::endl;
+	  return -999.;
+	}
+
+    }
+};
+
+
 //Get the time at a given fraction of the amplitude for times between x1 and x2 
 float Waveform::time_at_frac(const float& t1, const float& t2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate) const
 {

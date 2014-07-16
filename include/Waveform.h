@@ -96,6 +96,9 @@ class Waveform
   max_amplitude_informations max_amplitude(const int& x1, const int& x2, int nSamplesAroundMax=5) const;
 
   //Get the time at a given fraction of the amplitude for times between x1 and x2 
+  float interpolatedValue(const int& i1, int SampleToInterpolate=9) const;
+
+  //Get the time at a given fraction of the amplitude for times between x1 and x2 
   float time_at_frac(const int& i1, const int& i2, const float& frac, const max_amplitude_informations& maxInfos, int SampleToInterpolate=5) const;
 
   //Get the time at a given fraction of the amplitude for times between x1 and x2 

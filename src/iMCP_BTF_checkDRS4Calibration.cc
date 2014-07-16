@@ -60,7 +60,10 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 
   TH1F* wave_allSamples[interestingChannels.size()];
   TProfile* wave_profile[interestingChannels.size()];
+  TProfile* wave_deriv_profile[interestingChannels.size()];
+  TProfile* wave_residual[interestingChannels.size()];
   TH1F* wave_sample[interestingChannels.size()][1024];
+  TH1F* wave_sample_residual[interestingChannels.size()][1024];
   TH1F* wave_timeCross[interestingChannels.size()][thresholds.size()][MAX_THRESHOLDS_CROSSING];
   TH1F* wave_timeCross_difference[interestingChannels.size()][thresholds.size()][MAX_THRESHOLDS_CROSSING][MAX_THRESHOLDS_CROSSING];
 
@@ -75,11 +78,23 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	  name=Form("wave_%d_sample_%d",interestingChannels[i],is);
 	  wave_sample[i][is]=new TH1F(name,name,4096,-0.5,4095.5);
 	  writableObjects[name]=(TObject*) ( wave_sample[i][is] );
+
+	  name=Form("wave_%d_sample_residual_%d",interestingChannels[i],is);
+	  wave_sample_residual[i][is]=new TH1F(name,name,500,-50.,50.);
+	  writableObjects[name]=(TObject*) ( wave_sample_residual[i][is] );
 	}
 
       name=Form("wave_%d_profile",interestingChannels[i]);
       wave_profile[i]=new TProfile(name,name,1024,-0.5,1023.5,"s"); //error is RMS
       writableObjects[name]=(TObject*) (wave_profile[i]);
+
+      name=Form("wave_%d_deriv_profile",interestingChannels[i]);
+      wave_deriv_profile[i]=new TProfile(name,name,1024,-0.5,1023.5,"s"); //error is RMS
+      writableObjects[name]=(TObject*) (wave_deriv_profile[i]);
+
+      name=Form("wave_%d_residual",interestingChannels[i]);
+      wave_residual[i]=new TProfile(name,name,1024,-0.5,1023.5,"s"); //error is RMS
+      writableObjects[name]=(TObject*) (wave_residual[i]);
 
       //writableObjects[name]=(TObject*) (new TProfile(name,name,1024,-0.5,1023.5)); //error is error on mean 
 
@@ -238,14 +253,23 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
        } //end loop over digis
 
 
+
      for ( int i=0; i<interestingChannels.size();++i)
        {
-
+	 waveforms[i].interpolate();
+	 
 	 for (int j=0;j<waveforms[i]._samples.size();++j)
 	   {
 	     wave_allSamples[i]->Fill(waveforms[i]._samples[j]);
 	     wave_profile[i]->Fill(j,waveforms[i]._samples[j]);
 	     wave_sample[i][j]->Fill(waveforms[i]._samples[j]);
+	     if (j>4 && j<waveforms[i]._samples[j]-4)
+	       {
+		 float interpolatedValue=waveforms[i].interpolatedValue(j,7); //linear interpolatedValue from [-4,+4] samples
+		 wave_deriv_profile[i]->Fill(j,waveforms[i]._interpolator->Deriv(waveforms[i]._times[j])/1.e9);
+		 wave_residual[i]->Fill(j,waveforms[i]._samples[j]-interpolatedValue);
+		 wave_sample_residual[i][j]->Fill(waveforms[i]._samples[j]-interpolatedValue);
+	       }
 	   }
 	 
 	 std::vector< std::vector<float> > crossings;
