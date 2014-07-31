@@ -263,7 +263,7 @@ void iMCP_BTF_checkDRS4Calibration::Loop()
 	     wave_allSamples[i]->Fill(waveforms[i]._samples[j]);
 	     wave_profile[i]->Fill(j,waveforms[i]._samples[j]);
 	     wave_sample[i][j]->Fill(waveforms[i]._samples[j]);
-	     if (j>4 && j<waveforms[i]._samples[j]-4)
+	     if (j>4 && j<waveforms[i]._samples.size()-4)
 	       {
 		 float interpolatedValue=waveforms[i].interpolatedValue(j,7); //linear interpolatedValue from [-4,+4] samples
 		 wave_deriv_profile[i]->Fill(j,waveforms[i]._interpolator->Deriv(waveforms[i]._times[j])/1.e9);
