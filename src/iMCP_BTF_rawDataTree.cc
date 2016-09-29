@@ -79,6 +79,7 @@ void iMCP_BTF_rawDataTree::Init(TTree *tree)
    fChain->SetBranchAddress("nDigiSamples", &nDigiSamples, &b_nDigiSamples);
    fChain->SetBranchAddress("digiGroup", digiGroup, &b_digiGroup);
    fChain->SetBranchAddress("digiChannel", digiChannel, &b_digiChannel);
+   fChain->SetBranchAddress("digiFrequency", digiFrequency, &b_digiFrequency);
    fChain->SetBranchAddress("digiSampleIndex", digiSampleIndex, &b_digiSampleIndex);
    fChain->SetBranchAddress("digiSampleValue", digiSampleValue, &b_digiSampleValue);
    Notify();
@@ -109,6 +110,7 @@ void iMCP_BTF_rawDataTree::Book(TTree *tree)
   tree->Branch("nDigiSamples",&nDigiSamples,"nDigiSamples/i");
   tree->Branch("digiGroup",digiGroup,"digiGroup[nDigiSamples]/i");
   tree->Branch("digiChannel",digiChannel,"digiChannel[nDigiSamples]/i");
+  tree->Branch("digiFrequency",digiFrequency,"digiFrequency[nDigiSamples]/i");
   tree->Branch("digiSampleIndex",digiSampleIndex,"digiSampleIndex[nDigiSamples]/i");
   tree->Branch("digiSampleValue",digiSampleValue,"digiSample[nDigiSamples]/F");
   tree->Print();

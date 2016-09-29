@@ -27,8 +27,12 @@ class SimulatePulses : public iMCP_BTF_rawDataTree
   std::vector<TProfile*> ref_profiles;
 
   int nEvents=100;
+  int nSamples=1024;
 
+  float pedestal=100;
   float rms_amplitude_noise=0;
+  float time_jitter=0;
+  float profile_time_unit;
 
   SimulatePulses();
   virtual ~SimulatePulses();

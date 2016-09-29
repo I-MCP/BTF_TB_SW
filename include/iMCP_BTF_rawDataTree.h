@@ -94,6 +94,7 @@ public :
   UInt_t          nDigiSamples;
   UInt_t          digiGroup[NUM_DIGI_SAMPLES];   //[nDigiSamples]
   UInt_t          digiChannel[NUM_DIGI_SAMPLES];   //[nDigiSamples]
+  UInt_t          digiFrequency[NUM_DIGI_SAMPLES];   //[nDigiSamples]
   UInt_t          digiSampleIndex[NUM_DIGI_SAMPLES];   //[nDigiSamples]
   Float_t         digiSampleValue[NUM_DIGI_SAMPLES];   //[nDigiSamples]
   
@@ -116,6 +117,7 @@ public :
   TBranch        *b_nDigiSamples;   //!
   TBranch        *b_digiGroup;   //!
   TBranch        *b_digiChannel;   //!
+  TBranch        *b_digiFrequency;   //!
   TBranch        *b_digiSampleIndex;   //!
   TBranch        *b_digiSampleValue;   //!
    

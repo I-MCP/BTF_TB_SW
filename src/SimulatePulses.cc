@@ -1,6 +1,7 @@
 #include "SimulatePulses.h"
 #include "Waveform.h"
 #include "WaveformUtils.h"
+#include "TRandom3.h"
 
 #include <TKey.h>
 
@@ -32,6 +33,8 @@ void SimulatePulses::Loop()
   TKey *key;
   while (key = (TKey*)nextkey()) {
     TProfile* p=(TProfile*) key->ReadObj();
+    if (!TString(p->GetName()).Contains("_prof"))
+      continue;
     std::cout << "Getting wave profile " << p->GetName() << std::endl;
     ref_profiles.push_back(p);
   }
@@ -41,7 +44,7 @@ void SimulatePulses::Loop()
     cannotOpenFile(outFile.Data());
 
   std::cout << "===> output file " << outFile << " opened" << std::endl;
-  tree=new TTree("eventRawData","Simulated RAW DATA");
+  tree=new TTree("H4tree","H4tree");
   std::cout << "===> output tree " << tree->GetName() << " created" << std::endl;
   std::cout << "===> booking output tree" << std::endl;
   Book(tree);
@@ -56,6 +59,8 @@ void SimulatePulses::Loop()
   boardTriggerBit=0;
   triggerWord=0;
 
+  TRandom3 rGen(0);
+
   for (int ientry=0;ientry<nEvents;++ientry)
     {
       evtNumber = ientry + 1;
@@ -68,7 +73,10 @@ void SimulatePulses::Loop()
       std::vector<Waveform> simulatedWaves;
 
       for (int iprofile=0;iprofile<ref_profiles.size();++iprofile)
-	simulatedWaves.push_back(WaveformUtils::generateWaveform(ref_profiles[iprofile],SAMPLE_BIN_SIZE,NSAMPLES,rms_amplitude_noise));
+	{
+	  float amplitude=rGen.Rndm()*100.*35.;
+	  simulatedWaves.push_back(WaveformUtils::generateWaveform(ref_profiles[iprofile],profile_time_unit,SAMPLE_BIN_SIZE,nSamples,amplitude,pedestal,rms_amplitude_noise,time_jitter));
+	}
       
       
       for (int iwave=0;iwave<simulatedWaves.size();++iwave)
@@ -78,6 +86,7 @@ void SimulatePulses::Loop()
 	      digiGroup[nDigiSamples]=int(iwave/9);
 	      digiChannel[nDigiSamples]=iwave%9;
 	      digiSampleIndex[nDigiSamples]=isample;
+	      digiFrequency[nDigiSamples]=0;
 	      digiSampleValue[nDigiSamples]=simulatedWaves[iwave]._samples[isample];
 	      ++nDigiSamples;
 	    }
