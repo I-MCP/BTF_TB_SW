@@ -42,31 +42,41 @@
 
 using namespace std;
 
-#define DIGI_SAMPLES_TO_STORE 300
+#define MAX_DIGI_SAMPLES_TO_STORE 30000
+#define MAX_CHANNELS_STORE 5
 
 struct waveform_data
 {
-  float pedestal; //from pre-samples;
-  float pedestal_rms; //from pre-samples;
-  float max_amplitude; //max_value;
-  float time_at_max; //emualated constant fraction data
-  float time_at_frac30; //emualated constant fraction data
-  float time_at_frac50; //emualated constant fraction data
-  float samples[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
-  float sampleTime[DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+  unsigned int n_channels;
+  float pedestal[MAX_CHANNELS_STORE]; //from pre-samples;
+  float pedestal_rms[MAX_CHANNELS_STORE]; //from pre-samples;
+  float max_amplitude[MAX_CHANNELS_STORE]; //max_value;
+  float time_at_max[MAX_CHANNELS_STORE]; //emualated constant fraction data
+  float time_at_frac30[MAX_CHANNELS_STORE]; //emualated constant fraction data
+  float time_at_frac50[MAX_CHANNELS_STORE]; //emualated constant fraction data
+  unsigned int   n_samples;
+  float samples[MAX_DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+  float sampleTime[MAX_DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
+  int sampleChannel[MAX_DIGI_SAMPLES_TO_STORE]; //most relevant part of the waveform to be stored for later analysis
 
   void clear()
   {
-    pedestal=-1;
-    pedestal_rms=-1;
-    max_amplitude=-1;
-    time_at_max=-1;
-    time_at_frac30=-1;
-    time_at_frac50=-1;
-    for (unsigned int i(0);i<DIGI_SAMPLES_TO_STORE;++i)
+    n_channels=0;
+    for (unsigned int i(0);i<MAX_CHANNELS_STORE;++i)
+      {
+	pedestal[i]=-1;
+	pedestal_rms[i]=-1;
+	max_amplitude[i]=-1;
+	time_at_max[i]=-1;
+	time_at_frac30[i]=-1;
+	time_at_frac50[i]=-1;
+      }
+    n_samples=0;
+    for (unsigned int i(0);i<MAX_DIGI_SAMPLES_TO_STORE;++i)
       {
 	samples[i]=-999;
 	sampleTime[i]=-1;
+	sampleChannel[i]=-1;
       }
   };
 };
@@ -79,23 +89,23 @@ struct eventInfo
   unsigned int evtTimeSinceStart;
 };
 
-struct channels_data
-{
-  std::vector<waveform_data> channels_digi_data;
+// struct channels_data
+// {
+//   std::vector<waveform_data> channels_digi_data;
 
-  void clear()
-  {
-    for (unsigned int i(0);i<channels_digi_data.size();++i)
-      channels_digi_data[i].clear();
-  };
-};
+//   void clear()
+//   {
+//     for (unsigned int i(0);i<channels_digi_data.size();++i)
+//       channels_digi_data[i].clear();
+//   };
+// };
 
 struct LeCroyEvent
 {
   eventInfo _evtInfo;
 
   //MCP data
-  channels_data _channelsData;
+  waveform_data _channelsData;
 
   void clear()
   {
@@ -110,7 +120,7 @@ LeCroyEvent event;
 void bookOutputTree(TTree* tree);
 void bookEventInfo(TTree* tree);
 void bookChannelsData(TTree* tree);
-void bookWaveform(TTree* tree, TString name, waveform_data& waveform);
+void bookWaveform(TTree* tree);
 
 void bookOutputTree(TTree* tree)
 {
@@ -129,29 +139,34 @@ void bookEventInfo(TTree* tree)
 
 void bookChannelsData(TTree* tree)
 {
-  for (unsigned int i(0);i<event._channelsData.channels_digi_data.size();++i)
-    {
-      TString mcpName=Form("ch_%d",i);
-      bookWaveform(tree,mcpName,event._channelsData.channels_digi_data[i]);
-    }
+  // for (unsigned int i(0);i<event._channelsData.channels_digi_data.size();++i)
+  //   {
+  //     TString mcpName=Form("ch_%d",i);
+  bookWaveform(tree);
+   // }
 }
 
-void bookWaveform(TTree* tree, TString name, waveform_data& waveform)
+void bookWaveform(TTree* tree)
 {
-  tree->Branch(name+"_pedestal",&waveform.pedestal,name+"_pedestal/F");
-  tree->Branch(name+"_pedestal_rms",&waveform.pedestal_rms,name+"_pedestal_rms/F");
-  tree->Branch(name+"_max_amplitude",&waveform.max_amplitude,name+"_max_amplitude/F");
-  tree->Branch(name+"_time_at_frac30",&waveform.time_at_frac30,name+"_time_at_frac30/F");
-  tree->Branch(name+"_time_at_frac50",&waveform.time_at_frac50,name+"_time_at_frac50/F");
-  tree->Branch(name+"_time_at_max",&waveform.time_at_max,name+"_time_at_max/F");
-  tree->Branch(name+"_samples",waveform.samples,name+Form("_samples[%d]/F",DIGI_SAMPLES_TO_STORE));
-  tree->Branch(name+"_sampleTime",waveform.sampleTime,name+Form("_sampleTime[%d]/F",DIGI_SAMPLES_TO_STORE));
+  tree->Branch("n_channels",&(event._channelsData.n_channels),"n_channels/i");
+  tree->Branch("pedestal",event._channelsData.pedestal,"pedestal[n_channels]/F");
+  tree->Branch("pedestal_rms",event._channelsData.pedestal_rms,"pedestal_rms[n_channels]/F");
+  tree->Branch("max_amplitude",event._channelsData.max_amplitude,"max_amplitude[n_channels]/F");
+  tree->Branch("time_at_frac30",event._channelsData.time_at_frac30,"time_at_frac30[n_channels]/F");
+  tree->Branch("time_at_frac50",event._channelsData.time_at_frac50,"time_at_frac50[n_channels]/F");
+  tree->Branch("time_at_max",event._channelsData.time_at_max,"time_at_max[n_channels]/F");
+
+  tree->Branch("n_samples",&(event._channelsData.n_samples),"n_samples/i");
+  tree->Branch("samples",event._channelsData.samples,"samples[n_samples]/F");
+  tree->Branch("sampleTime",event._channelsData.sampleTime,"sampleTime[n_samples]/F");
+  tree->Branch("sampleChannel",event._channelsData.sampleChannel,"sampleChannel[n_samples]/I");
 }
 
 
 int main (int argc, char** argv)
 { 
   std::string outputFile = std::string(argv[1]);
+  std::string templateName = std::string(argv[2]);
 
   TFile *out = TFile::Open(outputFile.c_str(),"RECREATE");  
   if (!out->IsOpen())
@@ -160,9 +175,9 @@ int main (int argc, char** argv)
       return -1;
     }
 
-  std::string runDir = std::string(argv[2]);
+  std::string runDir = std::string(argv[3]);
   std::vector<string> chToAnalyze;
-  for (int i=3;i<argc;++i)
+  for (int i=4;i<argc;++i)
     chToAnalyze.push_back(std::string(argv[i]));
 
   std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
@@ -175,12 +190,12 @@ int main (int argc, char** argv)
   std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 
   TTree* tree=new TTree("eventData","LeCroy WaveForm Data");
-  event._channelsData.channels_digi_data.resize(chToAnalyze.size());
+  //  event._channelsData.n_channels=chToAnalyze.size();
   bookOutputTree(tree);
 
   //Loop over all the events
-  for (int i=0;i<99999;++i)
-  //  for (int i=0;i<10;++i)
+  for (int i=0;i<=99999;++i)
+  //  for (int i=0;i<99;++i)
     {
       int iSave=1;
       event.clear();
@@ -189,9 +204,9 @@ int main (int argc, char** argv)
       for (int ich=0;ich<chToAnalyze.size();++ich)
 	{
 	  std::ostringstream filename;
-	  filename << runDir << "/C" << chToAnalyze[ich] << "Trace" << std::setfill('0') << std::setw(5) << i << ".txt"; 
+	  filename << runDir << "/C" << chToAnalyze[ich] << templateName << std::setfill('0') << std::setw(5) << i << ".txt"; 
 	  std::string str(filename.str());
-	  //	  std::cout << "Opening " << str << std::endl;
+	  std::cout << "Opening " << str << std::endl;
 
 	  std::ifstream  myfile(str.c_str(), ios::in);
 	  
@@ -237,7 +252,7 @@ int main (int argc, char** argv)
 		{
 		  string wavetype;
 		  strtk::parse_columns(line,
-				       " \n",
+				       ",",
 				       strtk::column_list(0,2),
 				       modelName,wavetype);
 		  //	      std::cout << "model " << modelName << " wavetype " << wavetype << std::endl;
@@ -246,7 +261,7 @@ int main (int argc, char** argv)
 	      else if (nLine == 1)
 		{
 		  strtk::parse_columns(line,
-				       " \n",
+				       ",",
 				       strtk::column_list(3),
 				       segmentSize);
 		  // std::cout << "nSamples " << segmentSize << std::endl;
@@ -254,9 +269,10 @@ int main (int argc, char** argv)
 	      else if (nLine >4)
 		{
 		  strtk::parse_columns(line,
-				       " \n",
+				       ",",
 				       strtk::column_list(0,1),
 				       time,amplitude);
+		  // std::cout << time  << "," << amplitude << std::endl;
 		  eventWaveform.addTimeAndSample(std::atof(time.c_str()),std::atof(amplitude.c_str()));
 		}
 	      ++nLine;
@@ -279,25 +295,30 @@ int main (int argc, char** argv)
 	  float cft_30 = eventWaveform.time_at_frac(wave_max.time_at_max - 3.e-9, wave_max.time_at_max, 0.3,  wave_max,9);
 	  float cft_50 = eventWaveform.time_at_frac(wave_max.time_at_max - 3.e-9, wave_max.time_at_max, 0.5,  wave_max,9);
 
-	  event._channelsData.channels_digi_data[ich].pedestal=wave_pedestal.pedestal*1.e3; //storing data in mV
-	  event._channelsData.channels_digi_data[ich].pedestal_rms=wave_pedestal.rms*1.3;
-	  event._channelsData.channels_digi_data[ich].max_amplitude=wave_max.max_amplitude*1.e3; 
-	  event._channelsData.channels_digi_data[ich].time_at_max=wave_max.time_at_max * 1.e9; //storing data in ns
-	  event._channelsData.channels_digi_data[ich].time_at_frac30=cft_30*1.e9;
-	  event._channelsData.channels_digi_data[ich].time_at_frac50=cft_50*1.e9;
+	  event._channelsData.n_channels=event._channelsData.n_channels+1;
+	  event._channelsData.pedestal[ich]=wave_pedestal.pedestal*1.e3; //storing data in mV
+	  event._channelsData.pedestal_rms[ich]=wave_pedestal.rms*1.3;
+	  event._channelsData.max_amplitude[ich]=wave_max.max_amplitude*1.e3; 
+
+	  event._channelsData.time_at_max[ich]=wave_max.time_at_max * 1.e9; //storing data in ns
+	  event._channelsData.time_at_frac30[ich]=cft_30*1.e9;
+	  event._channelsData.time_at_frac50[ich]=cft_50*1.e9;
 	  
 	  //Filling interesting samples
-	  int s1,s2;
-	  eventWaveform.find_interesting_samples(DIGI_SAMPLES_TO_STORE,wave_max,1.25e-9,1.5e-9,s1,s2);
-	  for (unsigned int isample(s1);isample<=s2;++isample)
+	  // int s1,s2;
+	  // eventWaveform.find_interesting_samples(DIGI_SAMPLES_TO_STORE,wave_max,1.25e-9,1.5e-9,s1,s2);
+	  int startingSample=event._channelsData.n_samples;
+	  event._channelsData.n_samples+=eventWaveform._samples.size();
+	  for (unsigned int isample(0);isample<eventWaveform._samples.size();++isample)
 	    {
-	      event._channelsData.channels_digi_data[ich].samples[isample-s1]=eventWaveform._samples[isample]*1.e3; //storing data in mV
-	      event._channelsData.channels_digi_data[ich].sampleTime[isample-s1]=eventWaveform._times[isample]*1.e9; //storing data in ns
+	      event._channelsData.samples[startingSample+isample]=eventWaveform._samples[isample]*1.e3; //storing data in mV
+	      event._channelsData.sampleTime[startingSample+isample]=eventWaveform._times[isample]*1.e9; //storing data in ns
+	      event._channelsData.sampleChannel[startingSample+isample]=ich;
 	    }
 	  myfile.close();
 	}
       if (iSave)
-	tree->Fill();
+	  tree->Fill();
     }
   out->Write();
   out->Close();
