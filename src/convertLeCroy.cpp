@@ -22,6 +22,7 @@
 #include <ctime>
 #include <map>
 #include <math.h>
+#include <time.h>
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -84,9 +85,9 @@ struct waveform_data
 struct eventInfo
 {
   unsigned int evtNumber;
-  unsigned int evtTimestamp;
-  unsigned int evtTimedist;
-  unsigned int evtTimeSinceStart;
+  unsigned long evtTimestamp;
+  unsigned long evtTimedist;
+  unsigned long evtTimeSinceStart;
 };
 
 // struct channels_data
@@ -132,9 +133,9 @@ void bookOutputTree(TTree* tree)
 void bookEventInfo(TTree* tree)
 {
   tree->Branch("evtNumber",&(event._evtInfo.evtNumber),"evtNumber/i");
-  tree->Branch("evtTimestamp",&(event._evtInfo.evtTimestamp),"evtTimestamp/i");
-  tree->Branch("evtTimedist",&(event._evtInfo.evtTimedist),"evtTimedist/i");
-  tree->Branch("evtTimeSinceStart",&(event._evtInfo.evtTimeSinceStart),"evtTimeSinceStart/i");
+  tree->Branch("evtTimestamp",&(event._evtInfo.evtTimestamp),"evtTimestamp/l");
+  tree->Branch("evtTimedist",&(event._evtInfo.evtTimedist),"evtTimedist/l");
+  tree->Branch("evtTimeSinceStart",&(event._evtInfo.evtTimeSinceStart),"evtTimeSinceStart/l");
 }
 
 void bookChannelsData(TTree* tree)
@@ -200,7 +201,8 @@ int main (int argc, char** argv)
       int iSave=1;
       event.clear();
       event._evtInfo.evtNumber=i+1;
-      
+      event._evtInfo.evtTimestamp=0;
+
       for (int ich=0;ich<chToAnalyze.size();++ich)
 	{
 	  std::ostringstream filename;
@@ -241,9 +243,9 @@ int main (int argc, char** argv)
 	  string modelName;
 	  string segmentSize;
 	  string eventDate;
-	  string eventTime;
 	  string time;
 	  string amplitude;
+
 	  Waveform eventWaveform;
 	  
 	  while ( getline (myfile,line) )
@@ -264,16 +266,29 @@ int main (int argc, char** argv)
 				       ",",
 				       strtk::column_list(3),
 				       segmentSize);
-		  // std::cout << "nSamples " << segmentSize << std::endl;
 		}
 	      else if (nLine >4)
 		{
-		  strtk::parse_columns(line,
-				       ",",
-				       strtk::column_list(0,1),
-				       time,amplitude);
+	      	  std::vector<std::string> string_list;
+	      	  strtk::parse(line, ",", string_list);
 		  // std::cout << time  << "," << amplitude << std::endl;
-		  eventWaveform.addTimeAndSample(std::atof(time.c_str()),std::atof(amplitude.c_str()));
+		  eventWaveform.addTimeAndSample(std::atof(string_list[0].c_str()),std::atof(string_list[1].c_str()));
+		}
+	      else if (nLine == 3)
+	      	{
+	      	  std::vector<std::string> string_list;
+	      	  strtk::parse(line, ",", string_list);
+	      	  if (event._evtInfo.evtTimestamp == 0)
+		    {
+
+		      struct tm tm;
+		      time_t epoch;
+		      if ( strptime(string_list[1].c_str(), "%d-%b-%Y %H:%M:%S", &tm) != NULL )
+			{
+			  epoch = mktime(&tm);
+			  event._evtInfo.evtTimestamp=epoch;
+			}
+		    }
 		}
 	      ++nLine;
 	    }
@@ -318,7 +333,9 @@ int main (int argc, char** argv)
 	  myfile.close();
 	}
       if (iSave)
+	{
 	  tree->Fill();
+	}
     }
   out->Write();
   out->Close();
